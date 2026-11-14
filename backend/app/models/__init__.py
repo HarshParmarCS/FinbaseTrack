@@ -1,0 +1,21 @@
+"""ORM models. Every model is imported here so Alembic autogenerate and the mapper see them all."""
+
+from app.models.activity_log import ActivityLog
+from app.models.enums import ProjectStatus, TaskPriority, TaskStatus
+from app.models.project import Project
+from app.models.project_member import ProjectMember
+from app.models.refresh_token import RefreshToken
+from app.models.task import Task
+from app.models.user import User
+
+__all__ = [
+    "ActivityLog",
+    "Project",
+    "ProjectMember",
+    "ProjectStatus",
+    "RefreshToken",
+    "Task",
+    "TaskPriority",
+    "TaskStatus",
+    "User",
+]
