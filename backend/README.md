@@ -1,6 +1,6 @@
 # FinTasks Backend
 
-FastAPI + SQLAlchemy 2.0 + PostgreSQL. Current state: **milestones M1 and M1b** (foundation plus the relational schema: models, initial migration and constraint tests). Only `GET /api/v1/health` is exposed. No auth, projects or tasks endpoints yet.
+FastAPI + SQLAlchemy 2.0 + PostgreSQL. Current state: **milestones M1 to M5** (foundation, schema, authentication, PBAC engine, project and member management). Exposed: health, `/api/v1/auth/*`, `/api/v1/projects` and `/api/v1/projects/{id}/members`. No task endpoints yet. Project services call the PBAC engine before every mutation.
 
 All commands below run from the `backend/` folder.
 
@@ -92,7 +92,28 @@ uvicorn app.main:app --reload
 
 Every response carries an `X-Request-ID` header (a safe client-supplied one is echoed). Logs are readable text in `development` and one-line JSON in `test` and `production`.
 
-## 6. Tests and quality checks
+## 6. Authentication quick start
+
+Set `JWT_SECRET_KEY` in `.env` first (at least 32 characters; see `.env.example`). Tokens travel only in cookies; use `-c`/`-b` with curl to keep them:
+
+```bash
+# register (logs you in), then read your profile
+curl -i -c jar.txt -H 'Content-Type: application/json' \
+  -d '{"name":"Ana Lopez","email":"ana@example.com","password":"correct-horse-battery"}' \
+  http://localhost:8000/api/v1/auth/register
+curl -b jar.txt http://localhost:8000/api/v1/auth/me
+
+# state-changing calls with a session also need the CSRF header (value of the csrf_token cookie)
+CSRF=$(awk '$6=="csrf_token"{print $7}' jar.txt)
+curl -i -b jar.txt -c jar.txt -X POST -H "X-CSRF-Token: $CSRF" http://localhost:8000/api/v1/auth/refresh
+curl -i -b jar.txt -c jar.txt -X POST -H "X-CSRF-Token: $CSRF" http://localhost:8000/api/v1/auth/logout
+```
+
+Swagger UI can register, log in and call `/auth/me` (cookies are stored by the browser). `refresh` and `logout` need the `X-CSRF-Token` header, which Swagger UI cannot add automatically; use curl for those. The full contract is `../docs/api-contract.md`.
+
+> **Never `pip install jwt`.** PyJWT (installed from `requirements.txt`) provides the `jwt` module; the unrelated PyPI package named `jwt` overwrites it and breaks token handling (`module 'jwt' has no attribute 'encode'`). If it happens: `pip uninstall jwt pyjwt && pip install -r requirements-dev.txt`.
+
+## 7. Tests and quality checks
 
 ```bash
 pytest                    # needs TEST_DATABASE_URL (see step 3); migrates the test database itself
@@ -105,16 +126,16 @@ mypy
 ```
 app/
   main.py            application factory (create_app) and module-level app
-  core/              config, logging, exceptions, middleware
+  core/              config, logging, exceptions, middleware, cookies, csrf, clock
   database/          Base (naming convention), engine and request-scoped session
   api/               router.py mounts /api; v1/router.py mounts /v1 and the routers
   routers/           HTTP only: parse input, call a service, return the envelope
   schemas/           Pydantic request/response models and shared envelopes
-  services/          business logic and transactions        (empty until M2)
-  repositories/      database queries only                  (empty until M2)
+  services/          business logic and transactions (auth_service.py)
+  repositories/      database queries only (users, refresh tokens)
   models/            ORM models: user, project, project_member, task, activity_log, refresh_token
-  authorization/     PBAC engine                            (M4)
-  auth/              password hashing and tokens            (M2)
+  authorization/     PBAC: engine (PDP), service (PEP), information (PIP), policies.json (PAP)
+  auth/              passwords.py (Argon2id), tokens.py (JWT), dependencies.py (get_current_user)
 alembic/             migrations (URL comes from DATABASE_URL, never alembic.ini)
 tests/               pytest suite against a real PostgreSQL database (tests/models/ covers the schema)
 ```

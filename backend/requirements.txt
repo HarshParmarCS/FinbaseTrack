@@ -4,3 +4,7 @@ sqlalchemy>=2.0.57,<2.1
 psycopg[binary]==3.3.9
 alembic==1.20.1
 pydantic-settings==2.16.3
+# PyJWT provides the `jwt` module. NEVER `pip install jwt`: it is a different package that overwrites it.
+pyjwt==2.15.1
+argon2-cffi==25.1.0
+email-validator==2.4.0

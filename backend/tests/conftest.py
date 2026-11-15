@@ -38,6 +38,15 @@ TEST_DATABASE_URL = _test_database_url()
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 os.environ["ENVIRONMENT"] = "test"
 os.environ["LOG_LEVEL"] = "WARNING"
+# Fixed, test-only values (never real secrets). Environment variables beat backend/.env.
+os.environ["JWT_SECRET_KEY"] = "test-only-secret-key-at-least-32-characters-long"
+os.environ["JWT_ISSUER"] = "fintasks-api"
+os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "15"
+os.environ["REFRESH_TOKEN_EXPIRE_DAYS"] = "7"
+os.environ["COOKIE_SECURE"] = "false"
+os.environ["COOKIE_SAMESITE"] = "lax"
+os.environ["COOKIE_DOMAIN"] = ""
+os.environ["ALLOWED_ORIGINS"] = "http://localhost:3000"
 
 from fastapi import FastAPI  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
@@ -88,7 +97,16 @@ def db_session(engine: Engine) -> Iterator[Session]:
 def app(db_session: Session) -> FastAPI:
     """A fresh application whose DB dependency uses the rolled-back test session."""
     application = create_app()
-    application.dependency_overrides[get_db] = lambda: db_session
+
+    def override_get_db() -> Iterator[Session]:
+        # Mirrors the real get_db: roll back uncommitted work when the request fails.
+        try:
+            yield db_session
+        except Exception:
+            db_session.rollback()
+            raise
+
+    application.dependency_overrides[get_db] = override_get_db
     return application
 
 

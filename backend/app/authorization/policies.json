@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "default_effect": "deny",
+  "policies": [
+    {
+      "id": "project-create",
+      "action": "project.create",
+      "effect": "allow",
+      "operator": "all",
+      "conditions": [
+        "is_authenticated"
+      ],
+      "description": "Any authenticated user can create a project."
+    },
+    {
+      "id": "project-view",
+      "action": "project.view",
+      "effect": "allow",
+      "operator": "all",
+      "conditions": [
+        "is_project_member"
+      ],
+      "description": "Only current project members can view a project."
+    },
+    {
+      "id": "project-update",
+      "action": "project.update",
+      "effect": "allow",
+      "operator": "all",
+      "conditions": [
+        "is_project_owner"
+      ],
+      "description": "Only the project owner can update a project."
+    },
+    {
+      "id": "project-delete",
+      "action": "project.delete",
+      "effect": "allow",
+      "operator": "all",
+      "conditions": [
+        "is_project_owner"
+      ],
+      "description": "Only the project owner can delete a project."
+    },
+    {
+      "id": "project-member-manage",
+      "action": "project.member.manage",
+      "effect": "allow",
+      "operator": "all",
+      "conditions": [
+        "is_project_owner"
+      ],
+      "description": "Only the project owner can add or remove project members."
+    },
+    {
+      "id": "task-create",
+      "action": "task.create",
+      "effect": "allow",
+      "operator": "all",
+      "conditions": [
+        "is_project_member"
+      ],
+      "description": "Only project members can create tasks."
+    },
+    {
+      "id": "task-update",
+      "action": "task.update",
+      "effect": "allow",
+      "operator": "all",
+      "conditions": [
+        "is_project_member",
+        {
+          "operator": "any",
+          "conditions": [
+            "is_task_creator",
+            "is_task_assignee"
+          ]
+        }
+      ],
+      "description": "Only the task creator or the task assignee can update a task."
+    },
+    {
+      "id": "task-delete",
+      "action": "task.delete",
+      "effect": "allow",
+      "operator": "all",
+      "conditions": [
+        "is_project_owner",
+        {
+          "name": "task_status_is",
+          "value": "todo"
+        }
+      ],
+      "description": "Only the project owner can delete a task, and only while its status is todo."
+    },
+    {
+      "id": "task-complete",
+      "action": "task.complete",
+      "effect": "allow",
+      "operator": "all",
+      "conditions": [
+        "is_project_member",
+        "task_has_assignee",
+        {
+          "name": "task_required_fields_complete",
+          "fields": [
+            "title",
+            "description",
+            "priority",
+            "due_date",
+            "assignee"
+          ]
+        }
+      ],
+      "description": "A task can be completed only when it has an assignee and its title, description, priority and due date are filled in."
+    }
+  ]
+}

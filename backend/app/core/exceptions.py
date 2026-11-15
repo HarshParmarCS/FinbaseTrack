@@ -14,6 +14,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.core.config import get_settings
+from app.core.cookies import clear_auth_cookies
 from app.core.logging import request_id_ctx
 from app.schemas.common import ErrorBody, ErrorDetail, ErrorResponse
 
@@ -28,6 +30,8 @@ class AppError(Exception):
     status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
     code: str = "INTERNAL_ERROR"
     default_message: str = "An unexpected error occurred."
+    # When true, the error response also expires the authentication cookies.
+    clears_session_cookies: bool = False
 
     def __init__(self, message: str | None = None, details: Sequence[ErrorDetail] = ()) -> None:
         self.message = message or self.default_message
@@ -39,6 +43,16 @@ class UnauthenticatedError(AppError):
     status_code = status.HTTP_401_UNAUTHORIZED
     code = "UNAUTHENTICATED"
     default_message = "Authentication is required."
+
+
+class SessionInvalidError(UnauthenticatedError):
+    """The refresh token is unusable (missing, invalid, expired, revoked or reused).
+
+    The client must log in again, so the response also clears the auth cookies.
+    """
+
+    clears_session_cookies = True
+    default_message = "Your session is no longer valid. Please log in again."
 
 
 class PermissionDeniedError(AppError):
@@ -98,7 +112,10 @@ _HTTP_STATUS_CODES = {
 
 async def handle_app_error(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, AppError)
-    return error_response(exc.status_code, exc.code, exc.message, exc.details)
+    response = error_response(exc.status_code, exc.code, exc.message, exc.details)
+    if exc.clears_session_cookies:
+        clear_auth_cookies(response, get_settings())
+    return response
 
 
 async def handle_http_exception(request: Request, exc: Exception) -> JSONResponse:

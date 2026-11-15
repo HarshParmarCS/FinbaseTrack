@@ -58,7 +58,7 @@ Total projects, active projects, total tasks, completed tasks, pending tasks, ov
 | BR-5 | Only project members can create tasks. Task operations verify CURRENT membership on every request. |
 | BR-6 | A task can be updated by its creator OR its assignee, and only while that user is still a project member. The owner does not gain update rights by being the owner. |
 | BR-7 | A task can be deleted only if its status is `todo` AND the requester is the project owner. |
-| BR-8 | A task can be in status `completed` only if it has an assignee AND all required information is present (title, description, assignee, due date). The required field list is configured in the policy file. |
+| BR-8 | A task can be in status `completed` only if it has an assignee AND all required information is present (title, description, priority, due date and an assignee who is a current member). The required field list is configured in the policy file. |
 | BR-9 | Any write that results in status `completed` (create or update) must satisfy BR-8, evaluated against the resulting state of the task. |
 | BR-10 | Only project members can be assigned tasks. |
 | BR-11 | Removing a member revokes access immediately and unassigns that member's tasks in the same transaction. |

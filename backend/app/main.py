@@ -5,6 +5,8 @@ import logging
 from fastapi import FastAPI
 
 from app.api.router import api_router
+from app.authorization.engine import PolicyEngine
+from app.authorization.policy_loader import load_policy_registry
 from app.core.config import Settings, get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging
@@ -23,7 +25,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         version="0.1.0",
         description="FinTasks project management API.",
     )
-    register_middleware(app)
+    # Fail fast: an invalid or incomplete policy file stops the application from starting.
+    registry = load_policy_registry(settings.policy_file)
+    app.state.policy_engine = PolicyEngine(registry)
+    logger.info("Authorization policies loaded count=%d", len(registry))
+
+    register_middleware(app, settings)
     register_exception_handlers(app)
     app.include_router(api_router)
 

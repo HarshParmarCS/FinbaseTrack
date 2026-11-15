@@ -33,7 +33,7 @@ FinbaseTrack/
 │   │   ├── repositories/    # database queries only
 │   │   ├── models/          # SQLAlchemy models (imported in models/__init__.py for Alembic)
 │   │   ├── auth/            # password hashing, tokens (M2)
-│   │   └── authorization/   # PBAC: engine, registry, context, conditions/, policies.json, dependencies.py (M4)
+│   │   └── authorization/   # PBAC: engine, registry, policies, conditions, context, decision, policy_loader, information (PIP), service (PEP), policies.json
 │   ├── alembic/  alembic.ini
 │   ├── tests/               # test_*.py now; authorization/ and api/ sub-folders as they grow
 │   ├── requirements.txt  requirements-dev.txt  pyproject.toml (tool config only)
@@ -71,8 +71,8 @@ FinbaseTrack/
 1. Browser calls `/api/v1/...` on the Next.js origin. The Next.js rewrite proxies it to the backend, so the browser sees one origin.
 2. Middleware: request ID, structured logging, `Origin` check on mutating methods.
 3. `get_current_user` verifies the `access_token` cookie (PyJWT: signature, expiry, type) and loads the active user. Failure gives 401.
-4. The route's `authorize(action, load=...)` dependency loads the resource. A missing resource or a non-member of the project gives 404. It builds the `AuthorizationContext` from the verified user, the loaded resource and the proposed payload, and calls `PolicyEngine.authorize`. A denial gives 403 with the policy ID and reason.
-5. The router calls one service method. The service applies business rules inside a transaction, uses repositories, writes an audit entry, and commits.
+4. The router validates input and calls ONE service method (no authorization code in routers).
+5. The service first calls `AuthorizationService.require(user, action, ...)` (the PEP). It reads current facts from the database (PIP), the `PolicyEngine` (PDP) returns a `Decision`, and a denial raises a domain error: 404 for a missing resource or a non-member, 403 for a member denied by a policy. Only then does the service apply business rules inside a transaction, use repositories, write an activity entry and commit.
 6. The router wraps the result in the response envelope. Exceptions are converted by centralized handlers.
 7. Every denial and every mutation is logged with request ID, user ID, action and outcome. Secrets and tokens are never logged.
 
@@ -83,7 +83,7 @@ FinbaseTrack/
 - **Transactions:** one session per request, provided by a dependency. Services own the commit. Repositories never commit.
 - **Config:** `pydantic-settings` reads environment variables. Production startup fails if `JWT_SECRET_KEY` is the placeholder.
 - **Errors:** domain exceptions (`NotFoundError`, `ConflictError`, `BusinessRuleViolation`, `PermissionDeniedError`, `UnauthenticatedError`) map to HTTP codes in one handler module.
-- **Auth:** Argon2 hashing. Access JWT (15 min) in an HttpOnly cookie. Refresh token is an opaque random string, stored SHA-256 hashed, rotated on every use, revoked on logout.
+- **Auth:** Argon2 hashing. Access JWT (15 min) in an HttpOnly cookie. Refresh token is a JWT (audience `fintasks:refresh`), stored as a SHA-256 hash, rotated on every use, revoked on logout; reuse of a rotated token revokes its family.
 - **Authorization:** the `authorization/` module is the only place that decides access. See `docs/authorization-design.md`.
 - **Audit:** services call an audit helper after each mutation. Audit rows are written in the same transaction.
 
@@ -118,12 +118,12 @@ FinbaseTrack/
 | # | Decision | Reason |
 |---|---|---|
 | D1 | Custom PBAC engine with JSON policies, default deny | Required by the assignment; explainable; configurable |
-| D2 | Authorization via a route-level dependency, not in services | The assignment forbids scattering checks through controllers and services |
+| D2 | Decisions are made only by the PDP in `authorization/`; services ENFORCE them with one `AuthorizationService.require(...)` call before mutating; routers and repositories contain no authorization | Centralized decisions with no scattered conditions (assignment rule), and enforcement that cannot be skipped by a route that forgets a dependency. Replaces the earlier route-dependency design. |
 | D3 | 404 for non-members, 403 for members who are denied | Prevents leaking project existence |
 | D4 | Sync SQLAlchemy 2.0 | Simpler to reason about and test |
 | D5 | Hard delete, audit rows without foreign keys | Simpler queries; history survives deletion |
-| D6 | Cookie JWT + same-origin proxy + SameSite=Lax + Origin check | Mitigates XSS token theft and CSRF without extra token plumbing |
-| D7 | Opaque hashed refresh tokens with rotation | Revocable and safe if the database leaks |
+| D6 | HttpOnly cookie JWTs + same-origin proxy + SameSite=Lax + Origin check + double-submit `X-CSRF-Token` | Mitigates XSS token theft and CSRF; the token is only required when auth cookies are present |
+| D7 | Refresh token is a JWT (own audience and `token_type`), only its SHA-256 hash is stored, rotated on every use, reuse revokes the whole family | Revocable, safe if the database leaks, and reuse (theft) is detectable |
 | D8 | `varchar` + `CHECK` instead of native enums | Easier migrations |
 | D9 | Composite FK `(project_id, assignee_id)` to `project_members` | The database guarantees assignees are members |
 | D10 | `position` double precision for Kanban ordering | Cheap reordering without renumbering columns |
@@ -131,4 +131,5 @@ FinbaseTrack/
 | D12 | Layer-based backend layout (`routers/`, `services/`, `repositories/`, `models/`, `schemas/`) | Chosen by the project owner at M1; one file per feature inside each layer |
 | D13 | Health check at `/api/v1/health`, liveness only (no DB access) | All routes are versioned; the check must work even when the database is down |
 | D14 | SQLAlchemy pinned to `>=2.0,<2.1` | Matches the approved stack; 2.1 is a newer, unapproved release line |
+| D16 | Policies are a JSON file validated at startup; conditions are a fixed registry of Python functions; the file can select but never define behavior | Configurable PBAC with no code execution from configuration |
 | D15 | Podman is the local container runtime; the compose file stays compatible with Docker | The developer has Podman installed; the assignment requires Docker and Docker Compose, so the same `docker-compose.yml` and Dockerfiles must work with `docker compose up --build` |

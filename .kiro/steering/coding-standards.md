@@ -25,9 +25,9 @@ These standards apply to all code. Follow existing conventions in the repo. Wher
 
 ### Layering rules
 - Routers: parse input, declare the authorization dependency, call exactly one service method, return the envelope. NO business logic in routers.
-- Services: business rules and transactions. No HTTP types, no authorization decisions.
+- Services: business rules and transactions. No HTTP types. No authorization decisions: they only CALL `AuthorizationService.require(...)` and let a denial propagate.
 - Repositories: queries only. No business rules, NO authorization decisions, no commits.
-- Authorization lives only in `app/authorization/`. Every protected route declares its action through the `authorize(...)` dependency. Never check ownership, membership or roles ad hoc elsewhere.
+- Authorization decisions live only in `app/authorization/`. Services call `AuthorizationService.require(...)` before every mutation and do nothing else about access. Never check ownership, membership or status ad hoc to decide access, and never add roles.
 - Data scoping for list queries (only the user's projects) is done in the repository by a membership filter that the service passes in. It is not a policy decision. It is documented in `docs/authorization-design.md`.
 
 ### FastAPI

@@ -16,7 +16,8 @@ Tier legend: **T1** mandatory in the assignment, **T2** bonus (implemented, cut 
 | FR-AUTH-5 | JWT access tokens (15 min) are validated on every protected request (signature, expiry, type). | T1 |
 | FR-AUTH-6 | Tokens are delivered in HttpOnly cookies only. | T1 |
 | FR-AUTH-7 | Refresh tokens (7 days) rotate on every use. Reuse of a rotated token is rejected. | T2 |
-| FR-AUTH-8 | Reuse of a rotated refresh token revokes the whole token family. | T2 (stretch) |
+| FR-AUTH-8 | Reuse of a rotated refresh token revokes the whole token family. | T2 |
+| FR-AUTH-10 | State-changing requests that carry auth cookies are CSRF-protected (Origin check and `X-CSRF-Token`). CORS allows only configured origins. | T1 |
 | FR-AUTH-9 | `GET /auth/me` returns the current user. | T1 |
 
 ### Projects
@@ -26,7 +27,7 @@ Tier legend: **T1** mandatory in the assignment, **T2** bonus (implemented, cut 
 | FR-PRJ-2 | A user can list only projects they are a member of, with search, status filter and pagination. | T1 |
 | FR-PRJ-3 | A member can view a project. Non-members get 404. | T1 |
 | FR-PRJ-4 | Only the owner can update name, description and status (`active` or `archived`). | T1 |
-| FR-PRJ-5 | Only the owner can delete a project. Members and tasks are deleted with it. | T1 |
+| FR-PRJ-5 | Only the owner can delete a project. Members and tasks are deleted with it by database cascade, in one transaction. Activity history is kept. | T1 |
 | FR-PRJ-6 | Only the owner can add a member by email. The user must be registered. Duplicate gives 409. | T1 |
 | FR-PRJ-7 | Only the owner can remove a member. The owner cannot be removed. | T1 |
 | FR-PRJ-8 | Removing a member unassigns their tasks in the same transaction and immediately revokes access. | T1 |
@@ -52,8 +53,8 @@ Tier legend: **T1** mandatory in the assignment, **T2** bonus (implemented, cut 
 |---|---|---|
 | FR-AZ-1 | All authorization uses a centralized PBAC engine. RBAC is prohibited. | T1 |
 | FR-AZ-2 | The engine is default-deny. | T1 |
-| FR-AZ-3 | The seven mandatory policies (project visibility, update, delete; task creation, update, delete, completion) are implemented. | T1 |
-| FR-AZ-4 | Authorization is separated from business logic and invoked through one dependency per route. | T1 |
+| FR-AZ-3 | The seven mandatory policies (`project.view`, `project.update`, `project.delete`, `task.create`, `task.update`, `task.delete`, `task.complete`) are implemented. | T1 |
+| FR-AZ-4 | Authorization is separated from business logic: decisions are made only by the policy engine, and services enforce them with one `require(...)` call before mutating. | T1 |
 | FR-AZ-5 | Policies are defined in a JSON file validated at startup. | T2 |
 | FR-AZ-6 | Authorization uses only the user from the verified JWT. | T1 |
 | FR-AZ-7 | Responses include `allowed_actions` for projects and tasks so the UI can show or hide controls. | T2 |
@@ -62,7 +63,7 @@ Tier legend: **T1** mandatory in the assignment, **T2** bonus (implemented, cut 
 | ID | Requirement | Tier |
 |---|---|---|
 | FR-DSH-1 | Dashboard shows total, active projects, total, completed, pending, overdue tasks, tasks assigned to me, recent activity. (PDF mandates total projects, active projects, total, completed and pending tasks. Overdue, assigned-to-me and recent activity are extras.) | T1 / T2 |
-| FR-ACT-1 | Mutations write activity log entries (`activity_logs`). | T2 |
+| FR-ACT-1 | Mutations write activity log entries (`activity_logs`) in the same transaction. Project and member mutations do so from M5; task mutations from M6. | T2 |
 | FR-ACT-2 | A project activity timeline and a user-level recent activity feed are available to members. | T2 |
 
 ### Frontend
@@ -102,10 +103,10 @@ Tier legend: **T1** mandatory in the assignment, **T2** bonus (implemented, cut 
 | A3 | Only the owner adds or removes members. Members are added by email of an existing user. No invitation flow. |
 | A4 | Only members can be assigned tasks. Enforced by service validation AND a composite foreign key. |
 | A5 | Membership is read from the database on every request, so removal takes effect immediately. |
-| A6 | "Required task information" means non-empty title, description, assignee and due date. The list is configured in `policies.json`. |
+| A6 | "Required task information" means non-blank title and description, a priority, a due date and an assignee who is a current project member. The list is configured in `policies.json`. |
 | A7 | Task update is allowed for creator OR assignee only. The project owner does not gain update rights from ownership. The owner can still delete `todo` tasks. |
 | A8 | "Task Delete: requesting user is the project owner" means the owner of the task's project. |
-| A9 | Any write that results in status `completed` is checked against both `task:update` (or `task:create`) and `task:complete`, using the resulting state of the task. |
+| A9 | Any write that results in status `completed` is checked against both `task.update` (or `task.create`) and `task.complete`, using the resulting state of the task. |
 | A10 | "Active project" means project `status = active`. |
 | A11 | "Pending task" means status `todo` or `in_progress`. |
 | A12 | "Overdue task" means `due_date` is before today (UTC) and status is not `completed`. |
@@ -115,7 +116,7 @@ Tier legend: **T1** mandatory in the assignment, **T2** bonus (implemented, cut 
 | A16 | Removing a member unassigns their tasks. Tasks they created remain with `creator_id` unchanged. |
 | A17 | Emails are normalized to lowercase. |
 | A18 | A task's creator who is later removed from the project loses update rights, because update requires current membership. |
-| A19 | Creating a project requires only authentication, and is expressed as the `project:create` policy for default-deny consistency. |
+| A19 | Creating a project requires only authentication. It is expressed as a `project.create` policy added with the project endpoints (M5), because every action not covered by a policy is denied. |
 | A21 | The database enforces that the project owner is a member (deferred composite foreign key), that assignees are members of the task's project (composite foreign key), unique membership, and valid status and priority values. |
 | A20 | Dates: `due_date` is a calendar date (`YYYY-MM-DD`). Timestamps are UTC ISO 8601. |
 

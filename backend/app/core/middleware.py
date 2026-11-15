@@ -1,4 +1,4 @@
-"""HTTP middleware: request ID propagation and one structured log line per request."""
+"""HTTP middleware: CORS, request ID propagation, structured request log, CSRF protection."""
 
 import logging
 import re
@@ -6,8 +6,11 @@ import time
 import uuid
 
 from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
+from app.core.config import Settings
+from app.core.csrf import CSRF_HEADER, CSRFMiddleware
 from app.core.exceptions import REQUEST_ID_HEADER
 from app.core.logging import request_id_ctx
 
@@ -42,5 +45,20 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         return response
 
 
-def register_middleware(app: FastAPI) -> None:
+def register_middleware(app: FastAPI, settings: Settings) -> None:
+    """Register middleware. The LAST one added is the OUTERMOST (runs first).
+
+    Request order: CORS (answers preflights, adds CORS headers to every response)
+    -> request context (request ID, logging) -> CSRF -> routes.
+    """
+    app.add_middleware(CSRFMiddleware, allowed_origins=settings.allowed_origins)
     app.add_middleware(RequestContextMiddleware)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.allowed_origins,  # explicit list, never "*" (credentials are on)
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", CSRF_HEADER, REQUEST_ID_HEADER],
+        expose_headers=[REQUEST_ID_HEADER],
+        max_age=600,
+    )

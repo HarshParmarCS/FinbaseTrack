@@ -4,8 +4,15 @@ Single source of truth for the HTTP API. The backend implements it. The frontend
 
 - Base path: `/api/v1`. Health check: `GET /api/v1/health`.
 - Format: JSON (`application/json`). Timestamps are UTC ISO 8601 (`2026-11-15T10:30:00Z`). `due_date` is a calendar date (`2026-11-20`). IDs are UUIDs.
-- Auth: HttpOnly cookies `access_token` (15 min, path `/`) and `refresh_token` (7 days, path `/api/v1/auth`). No tokens in bodies. No `Authorization` header.
-- CSRF: mutating requests (POST, PUT, PATCH, DELETE) with an `Origin` header not in `ALLOWED_ORIGINS` are rejected with 403 `FORBIDDEN`.
+- Auth cookies (all `SameSite=Lax`, `Secure` in production):
+  - `access_token`: JWT, 15 minutes, `HttpOnly`, path `/`.
+  - `refresh_token`: JWT, 7 days, `HttpOnly`, path `/api/v1/auth`.
+  - `csrf_token`: random value, 7 days, readable by JavaScript (not `HttpOnly`), path `/`.
+  No tokens in bodies. No `Authorization` header.
+- CSRF protection for state-changing methods (POST, PUT, PATCH, DELETE), returning 403 `FORBIDDEN`:
+  1. If an `Origin` header is present it must be the API's own origin or one of `ALLOWED_ORIGINS`.
+  2. If the request carries an `access_token` or `refresh_token` cookie, it must also send the header `X-CSRF-Token` with the same value as the `csrf_token` cookie. Exempt: `POST /auth/login` and `POST /auth/register` (no session exists yet; rule 1 still applies).
+- CORS: only `ALLOWED_ORIGINS` are allowed, with credentials. Allowed request headers: `Content-Type`, `X-CSRF-Token`, `X-Request-ID`.
 - Client-supplied identity fields (`user_id`, `owner_id`, `creator_id`) are never accepted. Unknown request fields are rejected with 422.
 
 ## 1. Envelopes
@@ -40,7 +47,7 @@ Paginated lists add `meta`:
 | HTTP | `code` | When |
 |---|---|---|
 | 401 | `UNAUTHENTICATED` | Missing, invalid or expired access token; bad login credentials; invalid refresh token |
-| 403 | `FORBIDDEN` | Authenticated member denied by a policy; bad `Origin` |
+| 403 | `FORBIDDEN` | Authenticated member denied by a policy; disallowed `Origin`; missing or wrong `X-CSRF-Token` |
 | 404 | `NOT_FOUND` | Resource missing, unknown route, or project/task not visible to the user (non-member) |
 | 405 | `METHOD_NOT_ALLOWED` | HTTP method not supported on the route |
 | 409 | `CONFLICT` | Duplicate email, duplicate member |
@@ -68,6 +75,7 @@ TaskOut        { id, project_id, title, description: string|null,
                  allowed_actions: TaskAction[], created_at, updated_at }
 ActivityOut    { id, user: UserOut, project_id: uuid|null, task_id: uuid|null,
                  action: string, metadata: object, created_at }
+ProjectDetailOut ProjectOut + { members: MemberOut[] }   (returned by POST, GET one and PATCH)
 ProjectAction  "update" | "delete" | "manage_members" | "create_task"
 TaskAction     "update" | "delete" | "complete"
 ```
@@ -77,7 +85,7 @@ Validation limits: `email` valid address, max 255. `password` 8 to 128 chars. Us
 
 ## 3. Endpoints
 
-Legend: Auth column "Pub" means no authentication. "Policy action" is evaluated by the authorization module (`authorization-design.md`). For project and task resources the non-member check always runs first and gives 404; the listed action (for example `project:update`) is then evaluated and gives 403 on denial. The `project:view` / `task:view` entries below in combination rows describe that first membership check.
+Legend: Auth column "Pub" means no authentication. "Policy action" is evaluated by the authorization module (`authorization-design.md`). For project and task resources the non-member check always runs first and gives 404; the listed action (for example `project.update`) is then evaluated and gives 403 on denial. The `project.view` / `task.view` entries below in combination rows describe that first membership check.
 
 | # | Method and path | Auth | Policy action | Success |
 |---|---|---|---|---|
@@ -88,21 +96,21 @@ Legend: Auth column "Pub" means no authentication. "Policy action" is evaluated 
 | 5 | `POST /auth/logout` | Cookie | none | 204 |
 | 6 | `GET /auth/me` | Yes | none | 200 |
 | 7 | `GET /projects` | Yes | scoped to membership | 200 |
-| 8 | `POST /projects` | Yes | `project:create` | 201 |
-| 9 | `GET /projects/{project_id}` | Yes | `project:view` | 200 |
-| 10 | `PATCH /projects/{project_id}` | Yes | `project:view` + `project:update` | 200 |
-| 11 | `DELETE /projects/{project_id}` | Yes | `project:view` + `project:delete` | 204 |
-| 12 | `GET /projects/{project_id}/members` | Yes | `project:view` | 200 |
-| 13 | `POST /projects/{project_id}/members` | Yes | `project:view` + `project:member:manage` | 201 |
-| 14 | `DELETE /projects/{project_id}/members/{user_id}` | Yes | `project:view` + `project:member:manage` | 204 |
-| 15 | `GET /projects/{project_id}/tasks` | Yes | `project:view` | 200 |
-| 16 | `POST /projects/{project_id}/tasks` | Yes | `task:create` (+ `task:complete` if resulting status is completed) | 201 |
-| 17 | `GET /tasks/{task_id}` | Yes | `task:view` | 200 |
-| 18 | `PATCH /tasks/{task_id}` | Yes | `task:view` + `task:update` (+ `task:complete` if resulting status is completed) | 200 |
-| 19 | `DELETE /tasks/{task_id}` | Yes | `task:view` + `task:delete` | 204 |
+| 8 | `POST /projects` | Yes | `project.create` | 201 |
+| 9 | `GET /projects/{project_id}` | Yes | `project.view` | 200 |
+| 10 | `PATCH /projects/{project_id}` | Yes | `project.view` + `project.update` | 200 |
+| 11 | `DELETE /projects/{project_id}` | Yes | `project.view` + `project.delete` | 204 |
+| 12 | `GET /projects/{project_id}/members` | Yes | `project.view` | 200 |
+| 13 | `POST /projects/{project_id}/members` | Yes | `project.view` + `project.member:manage` | 201 |
+| 14 | `DELETE /projects/{project_id}/members/{user_id}` | Yes | `project.view` + `project.member:manage` | 204 |
+| 15 | `GET /projects/{project_id}/tasks` | Yes | `project.view` | 200 |
+| 16 | `POST /projects/{project_id}/tasks` | Yes | `task.create` (+ `task.complete` if resulting status is completed) | 201 |
+| 17 | `GET /tasks/{task_id}` | Yes | `task.view` | 200 |
+| 18 | `PATCH /tasks/{task_id}` | Yes | `task.view` + `task.update` (+ `task.complete` if resulting status is completed) | 200 |
+| 19 | `DELETE /tasks/{task_id}` | Yes | `task.view` + `task.delete` | 204 |
 | 20 | `GET /dashboard/stats` | Yes | scoped to membership | 200 |
 | 21 | `GET /dashboard/activity` | Yes | scoped to membership | 200 |
-| 22 | `GET /projects/{project_id}/activity` | Yes | `project:view` | 200 |
+| 22 | `GET /projects/{project_id}/activity` | Yes | `project.view` | 200 |
 
 Every authenticated endpoint can also return 401. Endpoints with a path ID can return 404. Endpoints with a body can return 422.
 
@@ -110,6 +118,8 @@ Every authenticated endpoint can also return 401. Endpoints with a path ID can r
 `GET /api/v1/health` returns 200 (liveness only; it does not query the database) `{ "data": { "status": "ok" } }`.
 
 ### 3.2 Auth
+
+**Common to register, login and refresh:** on success the response sets `access_token`, `refresh_token` and `csrf_token` cookies. The body never contains a token.
 
 **POST /auth/register**
 Request: `{ "email": "ana@example.com", "name": "Ana Lopez", "password": "s3cretpass" }`
@@ -122,12 +132,12 @@ Request: `{ "email": "...", "password": "..." }`
 Errors: 401 `UNAUTHENTICATED` with message "Invalid email or password." for unknown email, wrong password or inactive user. 422.
 
 **POST /auth/refresh**
-No body. Reads `refresh_token` cookie. Rotates: the old token is revoked and a new pair is set.
+No body. Reads the `refresh_token` cookie (requires the `X-CSRF-Token` header). Rotates: the old token is revoked and replaced, in the same token family, and a new access token is issued. Presenting a token that was already rotated or revoked is treated as theft: the whole family is revoked and the response is 401. An access token is never accepted here.
 200: `{ "data": UserOut }`.
 Errors: 401 (missing, unknown, expired, revoked or reused token; cookies are cleared).
 
 **POST /auth/logout**
-No body. Revokes the presented refresh token (if any) and clears both cookies. Always 204, even when not logged in.
+No body. Revokes the presented refresh token's family (if any) and clears all three cookies. Always 204, even when not logged in or when the token is invalid. Requires the `X-CSRF-Token` header when auth cookies are present.
 
 **GET /auth/me**
 200: `{ "data": UserOut }`.
@@ -141,17 +151,19 @@ Returns only projects the user is a member of, ordered by `updated_at` descendin
 
 **POST /projects**
 Request: `{ "name": "Website redesign", "description": "optional", "status": "active" }` (`description` and `status` optional; `status` defaults to `active`).
-201: `{ "data": ProjectOut }`. The creator becomes owner and member.
+201: `{ "data": ProjectDetailOut }`. The authenticated user becomes owner and first member. The project and the membership are written in one transaction. Owner and `created_by` are never read from the body.
 
 **GET /projects/{project_id}**
-200: `{ "data": ProjectOut }`. 404 for non-members.
+200: `{ "data": ProjectDetailOut }` (project, owner, member list, counts). 404 for non-members.
 
 **PATCH /projects/{project_id}**
-Request: any of `{ "name", "description", "status" }`. At least one field.
-200: `{ "data": ProjectOut }`. 403 for members who are not the owner. 404 for non-members.
+Request: any of `{ "name", "description", "status" }`. At least one field. Omitted fields are unchanged; `"description": null` clears the description; `name` and `status` cannot be null.
+200: `{ "data": ProjectDetailOut }`. 403 for members who are not the owner. 404 for non-members.
 
 **DELETE /projects/{project_id}**
-204. 403 for non-owner members. 404 for non-members. Cascades members and tasks.
+204. 403 for non-owner members. 404 for non-members. One transaction: the database cascades the project's members and tasks. `activity_logs` rows are kept (they have no foreign keys) and a `project.deleted` entry is written first.
+
+**GET /projects** also returns, per project, `member_count`, `task_counts` and `allowed_actions`, computed in one query (no per-project queries). `q` matches the name case-insensitively; `%` and `_` are matched literally.
 
 ### 3.4 Members
 
@@ -159,12 +171,12 @@ Request: any of `{ "name", "description", "status" }`. At least one field.
 200: `{ "data": MemberOut[] }` (owner first, then by `joined_at`). Not paginated.
 
 **POST /projects/{project_id}/members**
-Request: `{ "email": "bob@example.com" }`
+Request: exactly one of `{ "email": "bob@example.com" }` or `{ "user_id": "<uuid>" }`. Both or neither gives 422. (`user_id` names the person being added, never the caller.)
 201: `{ "data": MemberOut }`.
-Errors: 403 (not owner), 404 (project not visible, or no registered user with that email: code `NOT_FOUND`, message "User not found."), 409 (already a member).
+Errors: 403 (not owner), 404 (project not visible, or no active registered user matches: code `NOT_FOUND`, message "User not found."), 409 (already a member, including the owner).
 
 **DELETE /projects/{project_id}/members/{user_id}**
-204. Unassigns that user's tasks in the project in the same transaction. Access is revoked immediately.
+204. In one transaction the member's task assignments in this project are cleared (all statuses, so no task points at a non-member) and the membership is deleted. Access is revoked immediately: the user's next request gets 404. The member's own tasks (as creator) are untouched.
 Errors: 403 (not owner), 404 (project not visible, or user is not a member), 422 `BUSINESS_RULE_VIOLATION` (target is the owner).
 
 ### 3.5 Tasks

@@ -47,3 +47,14 @@ def in_values_check(column: str, enum_class: type[StrEnum]) -> str:
     """SQL text for ``column IN ('a', 'b')``. Values come from our own enums, never from users."""
     quoted = ", ".join(f"'{member.value}'" for member in enum_class)
     return f"{column} IN ({quoted})"
+
+
+class ActivityAction(StrEnum):
+    """Actions recorded in activity_logs (see docs/database-design.md)."""
+
+    PROJECT_CREATED = "project.created"
+    PROJECT_UPDATED = "project.updated"
+    PROJECT_DELETED = "project.deleted"
+    MEMBER_ADDED = "member.added"
+    MEMBER_REMOVED = "member.removed"
+    TASK_UNASSIGNED = "task.unassigned"

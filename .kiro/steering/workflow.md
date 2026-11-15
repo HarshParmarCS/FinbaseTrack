@@ -10,7 +10,7 @@ We build milestone by milestone, in the order defined in `docs/implementation-ro
 4. NEVER introduce RBAC: no roles, no role columns, no role checks, no permission tables tied to roles.
 5. NEVER bypass PBAC. Every protected action goes through the authorization module.
 6. NEVER put business logic inside routers.
-7. NEVER put authorization decisions inside repositories (or services).
+7. NEVER put authorization decisions inside repositories or services. Services may only call `AuthorizationService.require(...)`; the decision is made by the policy engine.
 8. NEVER hardcode secrets. Configuration comes from environment variables. `.env.example` contains placeholders only.
 9. NEVER invent frontend API response structures independently of the approved API contract (`docs/api-contract.md`).
 10. NEVER modify unrelated working code.

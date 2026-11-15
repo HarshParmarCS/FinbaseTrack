@@ -1,50 +1,73 @@
 # FinTasks: Authorization Design (PBAC)
 
-RBAC is prohibited. There are no roles, no role columns and no role checks. "Owner" and "member" are relationships between a user and a project that conditions can read. They are not roles and are never stored on the user.
+RBAC is prohibited. There are no roles, no role columns and no role checks. "Owner" and "member" are relationships between a user and a project that conditions read from the database. They are never stored on the user and never grant anything by themselves: only a policy can allow an action.
 
 ## 1. Principles
 
-1. **Centralized.** All access decisions are made in `backend/app/authorization/`. Nowhere else.
-2. **Default deny.** If no policy explicitly allows an action, it is denied.
-3. **Separated from business logic.** Routers declare the action. Services and repositories contain no authorization decisions.
-4. **Trusted identity only.** The subject is the user from the verified JWT. No client-supplied user ID is used.
-5. **Current state.** Conditions read membership and resource state from the database for the current request.
-6. **Configurable.** Policies are JSON, validated at startup. Conditions are reusable Python functions registered by name.
-7. **Explainable.** Every decision returns the policy ID and a reason, and denials are logged.
+1. **Centralized.** Every access decision is made by the policy engine in `backend/app/authorization/`. Nowhere else.
+2. **Default deny / fail closed.** No matching allow policy means deny. Unknown action, missing policy, unknown condition, missing data or an error during evaluation all mean deny.
+3. **Decide in one place, enforce in the service layer.** Services call `AuthorizationService.require(...)` before every mutation. That single call is the only authorization code a service contains. Services never inspect ownership, membership or status to decide access. Routers and repositories contain no authorization at all.
+4. **Framework independent.** The engine and everything it uses never import FastAPI or raise HTTP exceptions. The engine returns a `Decision`. The enforcement point raises domain errors, which the central exception handlers turn into 403 or 404.
+5. **Trusted identity only.** The subject is the user from the verified JWT. Project, creator and assignee identities are always read from the database, never from the request.
+6. **Current state.** Membership, ownership and task attributes are read from the database for each decision. Nothing is cached across requests, so a removed member loses access on their next request.
+7. **Configurable and safe.** Policies are JSON. Condition names map to predefined Python functions. JSON is never evaluated as code (no `eval`, `exec`, dynamic imports).
+8. **Explainable.** Each decision carries the policy ID, a reason code and the failed conditions. Denials are logged.
 
-## 2. Components
+## 2. PEP, PDP, PAP, PIP
+
+| Role | Responsibility | Implementation |
+|---|---|---|
+| **PEP** (Policy Enforcement Point) | Asks for a decision before an action and enforces it | `AuthorizationService.require*` in `service.py`, called by the service layer; raises `PermissionDeniedError` (403) or `NotFoundError` (404) |
+| **PDP** (Policy Decision Point) | Evaluates policies against a context and returns a `Decision` | `PolicyEngine` in `engine.py`, with `registry.py`, `policies.py`, `conditions.py` |
+| **PAP** (Policy Administration Point) | Where policies are defined, validated and loaded | `policies.json` (version controlled, changed by code review) and `policy_loader.py`, which validates it at startup |
+| **PIP** (Policy Information Point) | Supplies the current facts the policies need | `PolicyInformationPoint` in `information.py`: reads membership, project and task state from PostgreSQL |
+
+## 3. Module layout
 
 ```
-authorization/
-├── engine.py        PolicyEngine: authorize(), is_allowed(), evaluation algorithm
-├── registry.py      PolicyRegistry: loads and validates policies.json, maps condition names to functions
-├── context.py       AuthorizationContext, Decision, ResourceState dataclasses
-├── conditions/      reusable condition functions (pure)
-│   ├── common.py    is_authenticated
-│   ├── project.py   is_project_member, is_project_owner
-│   └── task.py      is_task_creator, is_task_assignee, task_status_is, task_has_assignee,
-│                    task_required_fields_present
-├── dependencies.py  authorize(...) FastAPI dependency factory, resource loaders, action resolver
-└── policies.json    policy definitions
-```
-
-### AuthorizationContext
-```
-user:      the authenticated User (from the verified JWT)
-action:    string such as "task:update"
-project:   Project | None             (loaded resource)
-task:      Task | None                (loaded resource, current state)
-proposed:  TaskState | None           (resulting state if the write succeeds: current task merged with the payload; for create, built from the payload)
-is_member: bool                       (current membership of user in project, queried once per request)
-```
-Conditions receive the context and optional parameters from the policy. They never touch HTTP objects and never write.
-
-### Decision
-```
-Decision { allowed: bool, policy_id: str | None, reason: str }
+app/authorization/
+├── __init__.py       public API
+├── decision.py       Decision (frozen dataclass) and ReasonCode
+├── context.py        AuthorizationContext, Subject, ProjectFacts, TaskFacts, TaskChanges
+├── conditions.py     condition functions and the safe condition registry
+├── policies.py       Action, Effect, Policy, condition tree evaluation, PolicyConfigError
+├── registry.py       PolicyRegistry: action identifier to policies
+├── policy_loader.py  loads and validates policies.json
+├── engine.py         PolicyEngine (the PDP)
+├── information.py    PolicyInformationPoint (the PIP)
+├── service.py        AuthorizationService (the PEP)
+├── dependencies.py   FastAPI providers for the engine and the service
+└── policies.json     the seven policies
 ```
 
-## 3. Policy file format (`policies.json`)
+Only `dependencies.py` imports FastAPI. A test enforces that no other file in the package does.
+
+## 4. Actions and policies
+
+Action identifiers use dots. Nine policies exist, the seven mandatory ones plus two supporting ones added with the project endpoints (M5). Any other action is denied.
+
+| Action | Policy ID | Conditions (all must hold) |
+|---|---|---|
+| `project.view` | `project-view` | `is_project_member` |
+| `project.update` | `project-update` | `is_project_owner` |
+| `project.delete` | `project-delete` | `is_project_owner` |
+| `task.create` | `task-create` | `is_project_member` |
+| `task.update` | `task-update` | `is_project_member` AND (`is_task_creator` OR `is_task_assignee`) |
+| `task.delete` | `task-delete` | `is_project_owner` AND `task_status_is(todo)` |
+| `project.create` | `project-create` | `is_authenticated` |
+| `project.member.manage` | `project-member-manage` | `is_project_owner` |
+| `task.complete` | `task-complete` | `is_project_member` AND `task_has_assignee` AND `task_required_fields_complete(title, description, priority, due_date, assignee)` |
+
+Notes:
+- **Membership is part of every project and task policy.** `is_project_owner` itself requires current membership. A removed member (or a stale creator or assignee) is therefore denied immediately.
+- **Reading a task** uses `project.view` evaluated against the task's project. There is no separate task-view policy.
+- **`project.create`** allows any authenticated, active user. **`project.member.manage`** (add and remove members) is owner-only. Both were added in M5; before that they were denied.
+- **Completion is checked on the resulting state.** Any write whose resulting status is `completed` (create or update) must satisfy both the base action and `task.complete`, evaluated against the task as it would be after the write. This makes "clear the due date of a completed task" a denied update.
+- **"Has an assignee"** means the resulting assignee is set AND is currently a member of the task's project.
+- **Required completion fields:** `title`, `description`, `priority`, `due_date`, `assignee`. A text field counts as complete only if it is not blank. They are configured in `policies.json`.
+- **Data scoping, not policy:** list and aggregate endpoints (project list, dashboard) filter by membership in the query. A non-member's data never appears.
+
+## 5. Policy file format (`policies.json`)
 
 ```json
 {
@@ -53,162 +76,139 @@ Decision { allowed: bool, policy_id: str | None, reason: str }
   "policies": [
     {
       "id": "task-delete",
-      "description": "Only the project owner may delete a task, and only while it is todo.",
-      "action": "task:delete",
+      "action": "task.delete",
       "effect": "allow",
-      "conditions": { "all": ["is_project_owner", { "fn": "task_status_is", "value": "todo" }] },
-      "deny_reason": "Only the project owner can delete a task whose status is todo."
+      "operator": "all",
+      "conditions": ["is_project_owner", {"name": "task_status_is", "value": "todo"}],
+      "description": "Only the project owner can delete a task, and only while it is todo."
     }
   ]
 }
 ```
 
-Fields: `id` (unique), `description`, `action`, `effect` (`allow` or `deny`), `conditions`, `deny_reason` (optional, shown when the policy is the one that failed).
+Policy fields: `id` (unique, lowercase with hyphens), `action` (must be a known action), `effect` (`allow` or `deny`), `conditions` (non-empty list), `operator` (`all` or `any`, default `all`), `description` (optional, used in the 403 message). No other keys are accepted.
 
-Condition grammar:
-- `"name"`: a registered condition with no parameters.
-- `{ "fn": "name", ...params }`: a registered condition with parameters.
-- `{ "all": [node, ...] }`: true if every node is true.
-- `{ "any": [node, ...] }`: true if at least one node is true.
-- `{ "not": node }`: negation.
+A condition entry is one of:
+- `"name"`: a registered condition without parameters;
+- `{"name": "...", <parameters>}`: a registered condition with parameters (every parameter is required and validated);
+- `{"operator": "all" | "any", "conditions": [...]}`: a nested group (maximum depth 4).
 
-Validation at startup (failure aborts the app): valid JSON structure, unique IDs, `default_effect` is `deny`, every condition name exists in the registry, parameters are valid for the condition, `all`/`any` are non-empty.
+The loader rejects, at startup, with a `PolicyConfigError` that aborts the application:
+unreadable or invalid JSON, a document that is not an object, unknown keys, a wrong `version`, `default_effect` other than `deny`, an unknown action, a missing policy for a required action, duplicate policy IDs, an unknown condition, an unsupported operator, an empty condition list, wrong parameter names or values, an invalid effect, and malformed entries.
 
-## 4. Evaluation algorithm
+### Safe condition registry
+`conditions.py` holds a fixed dictionary from condition name to a `ConditionSpec` (the Python function and its parameter validators). The JSON can only select entries of this dictionary. It cannot supply code, module names or expressions.
 
-`PolicyEngine.authorize(user, action, resource, payload)` (the context is built from these):
-
-1. Collect policies whose `action` equals the requested action. If none exist: deny, `policy_id = null`, reason "No policy allows this action" (default deny).
-2. Evaluate each collected policy's conditions.
-3. If any matching `deny` policy's conditions are true: deny (explicit deny wins).
-4. Else if any matching `allow` policy's conditions are true: allow, return its ID.
-5. Else deny, return the ID of the first allow policy considered and its `deny_reason`.
-
-Composite checks: when one request involves several actions (see 6), ALL must be allowed. The first denial is returned.
-
-`PolicyEngine.is_allowed(...)` runs the same algorithm without logging or raising. It is used to build `allowed_actions`.
-
-## 5. Action and policy catalog
-
-| Action | Policy ID | Conditions |
-|---|---|---|
-| `project:create` | `project-create` | `is_authenticated` |
-| `project:view` | `project-view` | `is_project_member` |
-| `project:update` | `project-update` | `is_project_owner` |
-| `project:delete` | `project-delete` | `is_project_owner` |
-| `project:member:manage` | `project-member-manage` | `is_project_owner` |
-| `task:create` | `task-create` | `is_project_member` |
-| `task:view` | `task-view` | `is_project_member` |
-| `task:update` | `task-update` | `is_project_member` AND (`is_task_creator` OR `is_task_assignee`) |
-| `task:delete` | `task-delete` | `is_project_owner` AND `task_status_is(todo)` |
-| `task:complete` | `task-complete` | `is_project_member` AND `task_has_assignee` AND `task_required_fields_present(title, description, assignee_id, due_date)` |
-
-Mapping to the seven mandatory assignment policies:
-- Project visibility: `project-view`. Project update: `project-update`. Project delete: `project-delete`.
-- Task creation: `task-create`. Task update: `task-update`. Task delete: `task-delete`. Task completion: `task-complete`.
-- Additional policies (assumptions): `project-create`, `project-member-manage`, `task-view`.
-
-### Condition catalog
 | Condition | Parameters | True when |
 |---|---|---|
-| `is_authenticated` | none | context user is an active, verified user |
-| `is_project_member` | none | user is currently a member of `context.project` (owner counts because the owner is a member) |
-| `is_project_owner` | none | `context.project.owner_id == user.id` AND user is a current member |
-| `is_task_creator` | none | `context.task.creator_id == user.id` |
-| `is_task_assignee` | none | `context.task.assignee_id == user.id` |
-| `task_status_is` | `value` | `context.task.status == value` (current state) |
-| `task_has_assignee` | none | `context.proposed.assignee_id` is not null (resulting state) |
-| `task_required_fields_present` | `fields` (list) | every listed field of `context.proposed` is non-null and, for strings, non-blank (resulting state) |
+| `is_authenticated` | none | the subject is an authenticated, active user (the subject comes only from the verified token) |
+| `is_project_member` | none | a project is in the context and the subject is currently a member |
+| `is_project_owner` | none | the subject is currently a member AND `project.owner_id` equals the subject's ID |
+| `is_task_creator` | none | the stored task's `creator_id` equals the subject's ID |
+| `is_task_assignee` | none | the stored task's `assignee_id` equals the subject's ID |
+| `task_status_is` | `value` (`todo`, `in_progress`, `completed`) | the stored task has that status |
+| `task_has_assignee` | none | the resulting task has an assignee who is currently a project member |
+| `task_required_fields_complete` | `fields` (subset of `title`, `description`, `priority`, `due_date`, `assignee`) | every listed field of the resulting task is filled in |
 
-Conditions are pure functions of the context. New conditions are added in `conditions/` and registered by name.
+A condition returns `True` only for an explicit `True`. Missing data (no project, no task) is `False`.
 
-## 6. Request flow
+## 6. Context and decision
 
-### Dependency
-Each protected route declares its action through one dependency:
+```
+AuthorizationContext (frozen)
+  subject        Subject(id, is_active)           the authenticated user
+  action         str                              e.g. "task.update"
+  project        ProjectFacts(id, owner_id)|None  current state from the database
+  is_project_member  bool                         current membership of the subject
+  task           TaskFacts | None                 current stored state
+  proposed_task  TaskFacts | None                 state after the requested change (create or update)
+  assignee_is_project_member  bool                is the resulting assignee a current member
 
-```python
-@router.patch("/tasks/{task_id}", response_model=...)
-def update_task(
-    task_id: UUID,
-    payload: TaskUpdate,
-    ctx: AuthzResult = Depends(authorize("task:update", load=load_task_for_update)),
-    service: TaskService = Depends(...),
-):
-    return ok(service.update_task(ctx.task, payload, actor=ctx.user))
+Decision (frozen)
+  allowed, action, policy_id, reason_code, failed_conditions
+ReasonCode: ALLOWED, EXPLICIT_DENY, CONDITIONS_NOT_MET, NO_POLICY, UNKNOWN_ACTION,
+            SUBJECT_INACTIVE, RESOURCE_NOT_FOUND, EVALUATION_ERROR
 ```
 
-The dependency:
-1. Gets the current user from `get_current_user` (verified JWT).
-2. Loads the resource using the loader (task, then its project). Missing resource gives 404.
-3. Computes membership. For project-scoped resources a non-member gets 404 (hides existence) instead of evaluating policies.
-4. Builds `proposed` from the payload where the action writes a task.
-5. Resolves the list of actions to check (see below), calls the engine, and returns the loaded objects so the service does not re-fetch.
-6. On denial: log (user ID, action, policy ID, reason) and raise `PermissionDeniedError`, which becomes 403 with `details[0] = {policy_id, reason}`.
+## 7. Evaluation algorithm (PDP)
 
-### Action resolver
-| Request | Actions evaluated |
+`PolicyEngine.evaluate(context) -> Decision`. It never raises: any exception during evaluation produces `Decision(allowed=False, reason_code=EVALUATION_ERROR)`.
+
+1. Subject not active: deny (`SUBJECT_INACTIVE`).
+2. Action not one of the known actions: deny (`UNKNOWN_ACTION`).
+3. No policy registered for the action: deny (`NO_POLICY`).
+4. Any matching `deny` policy: deny (`EXPLICIT_DENY`). Explicit deny wins.
+5. Any matching `allow` policy: allow (`ALLOWED`, returns the policy ID).
+6. Otherwise deny (`CONDITIONS_NOT_MET`, with the policy ID and the failed condition names).
+
+## 8. Enforcement and request lifecycle (PEP)
+
+```
+HTTP request
+ -> middleware (request ID, CSRF)               401 if authentication is missing or invalid
+ -> get_current_user                            (identity from the verified JWT)
+ -> router: validate input, call ONE service method (no authorization code)
+ -> service: authz.require(user, "task.delete", task_id=...)       <- PEP
+      -> PIP: reads the task, its project, current membership from PostgreSQL
+              (project and creator identities come from the database, never the client)
+      -> PDP: PolicyEngine.evaluate(context) -> Decision
+      -> allowed: continue            denied: raise a domain error
+ -> service: business rules, repository calls, commit
+ -> router wraps the result in the envelope
+ -> exception handlers: PermissionDeniedError -> 403, NotFoundError -> 404
+```
+
+`AuthorizationService` methods:
+- `evaluate(user, action, ...) -> Decision`: never raises.
+- `allowed_project_actions(user, project_facts, is_member) -> set[Action]`: evaluates the project-level actions for facts the caller has already loaded, with no extra queries. Used to fill `allowed_actions` for a whole project list without N+1 queries.
+- `require(user, action, project_id=... | task_id=..., changes=...) -> AuthorizationContext`: raises when denied.
+- `require_task_create(user, project_id, changes)` and `require_task_update(user, task_id, changes)`: apply the base policy and, when the resulting status is `completed`, also `task.complete`, on the same facts.
+
+Mapping of denials:
+
+| Situation | Result |
 |---|---|
-| `PATCH /projects/{id}` | `project:update` |
-| `POST .../members`, `DELETE .../members/{user_id}` | `project:member:manage` |
-| `POST /projects/{id}/tasks` | `task:create`; plus `task:complete` if the requested status is `completed` |
-| `PATCH /tasks/{id}` | `task:update`; plus `task:complete` if the resulting status is `completed` |
-| `DELETE /tasks/{id}` | `task:delete` |
-| `GET` project, members, activity | `project:view` |
-| `GET` task | `task:view` |
+| Project or task does not exist | `NotFoundError`, 404 |
+| User is not a member of the project (including a task reached by a guessed UUID) | `NotFoundError`, 404, identical to "does not exist" so nothing is revealed |
+| Member denied by a policy | `PermissionDeniedError`, 403, with the policy ID and its description in `details` |
+| No or invalid authentication | 401, raised before authorization |
 
-Completion is evaluated against the resulting state: if a task is already `completed` and a PATCH clears its due date, the resulting state is incomplete and the update is denied.
+A task is always addressed by its own ID. The service passes only `task_id` and the PIP derives the project from the database. When a project ID is supplied (for example when creating a task) it is only a lookup key: membership in that project is verified, and a client-supplied ID cannot grant access.
 
-### 404 versus 403
-The non-member check happens first (it is the `project:view` / `task:view` policy, evaluated implicitly by the dependency before the route's own action). A non-member never receives 403 for project or task resources. A member denied by a policy receives 403. This is why the contract lists `project:view` + the route action for write endpoints.
+## 9. Membership changes
 
-### List and aggregate endpoints (data scoping)
-`GET /projects`, `GET /dashboard/stats` and `GET /dashboard/activity` have no single resource to authorize. They return only data from projects where the user is a member. The service passes the verified user ID into a repository membership filter. This is the data-scoping form of the `project:view` policy, and it is tested explicitly (a non-member's data never appears). `GET /projects/{id}/tasks` first passes `project:view`.
+Membership is read from PostgreSQL on every decision using column queries, so no stale ORM object can answer. Removing a member deletes their `project_members` row (after unassigning their tasks). From the very next decision they are a non-member (404) even if the same database session already loaded their old membership.
 
-### allowed_actions
-When building `ProjectOut` and `TaskOut`, the service asks the engine (`is_allowed`) for the actions listed in the contract and returns the allowed ones. The mapping is:
-- Project: `update` is `project:update`, `delete` is `project:delete`, `manage_members` is `project:member:manage`, `create_task` is `task:create`.
-- Task: `update` is `task:update`, `delete` is `task:delete`, `complete` is `task:complete` evaluated against the current task state (as if status were completed).
+## 10. Logging
 
-This keeps one source of truth. The UI never replicates policy logic.
+- Denials: INFO, with user ID, action, policy ID, reason code and failed conditions.
+- Evaluation errors: ERROR with traceback (the decision is still deny).
+- Startup: the number of policies loaded. A policy error stops the application.
 
-## 7. Membership changes
+## 11. Testing matrix (`backend/tests/authorization/`)
 
-Membership is read from the database in every request (no caching across requests). Removing a member deletes their `project_members` row and unassigns their tasks in one transaction. From the next request they receive 404 for the project and its tasks. Their JWT remains valid, but it carries identity only and no permissions.
+Every policy has a positive, a negative and a boundary test, using in-memory contexts (no database).
 
-## 8. Logging and audit
-
-- Denials: INFO log with request ID, user ID, action, policy ID and reason.
-- Allowed mutations are written to `activity_logs` by services (not by the authorization module).
-- Startup logs the number of policies loaded and the policy file version.
-
-## 9. Testing matrix (`backend/tests/authorization/`)
-
-Unit tests run on constructed contexts with no database. API tests (`tests/api/`) confirm the end-to-end status codes.
-
-| Policy | Allow case | Deny case | Default-deny / edge |
+| Policy | Positive | Negative | Boundary |
 |---|---|---|---|
-| `project-create` | any authenticated user | n/a | unauthenticated gets 401 |
-| `project-view` | member | non-member gives 404 | unknown action is denied |
-| `project-update` | owner | member non-owner gives 403 | non-member 404 |
-| `project-delete` | owner | member non-owner gives 403 | non-member 404 |
-| `project-member-manage` | owner | member non-owner gives 403 | removing the owner gives 422 |
-| `task-create` | member | non-member gives 404 | member removed then create gives 404 |
-| `task-view` | member | non-member gives 404 | |
-| `task-update` | creator member, assignee member | member who is neither gives 403, owner who is neither gives 403 | removed creator or assignee gives 404 |
-| `task-delete` | owner and `todo` | owner and `in_progress` gives 403, creator non-owner gives 403 | completed task gives 403 |
-| `task-complete` | assignee set and all required fields present | no assignee gives 403, missing due date or description gives 403 | completing at create time is checked too; clearing a field on a completed task is denied |
+| `project-view` | member | non-member | owner whose membership row is gone; inactive subject |
+| `project-update` | owner | member who is not the owner | owner of another project; owner no longer a member |
+| `project-delete` | owner | member who is not the owner | same as update |
+| `task-create` | member | non-member | removed member; no project in the context |
+| `task-update` | creator; assignee | member who is neither (including the project owner) | removed creator; removed assignee; user who is both |
+| `task-delete` | owner and `todo` | non-owner and `todo`; owner and `completed` | owner and `in_progress` |
+| `task-complete` | assignee set and all fields filled | no assignee | blank description; each field missing in turn; non-member assignee; resulting state complete while stored state is not, and the reverse |
 
-Engine tests: default deny with no policy, explicit deny beats allow, `all`/`any`/`not` composition, unknown condition fails at startup, duplicate policy ID fails at startup, invalid parameters fail at startup, and `is_allowed` equals `authorize` outcomes.
+Engine tests: default deny, unknown action, missing policy, explicit deny wins, `any`/`all`/nested groups, failing condition fails closed, inactive subject. Loader tests: every rejection listed in section 5. Service tests against PostgreSQL: removed member, guessed task UUID, 403 versus 404, the completion double check, stale session. HTTP tests: 401 versus 403 versus 404. Structural tests: no FastAPI imports outside `dependencies.py`, no `eval`/`exec`/`compile`/dynamic imports, and no role-like identifiers or columns anywhere.
 
-## 10. Extending
+## 12. Extending
 
-1. Add or update the policy in this document.
-2. Add the condition function (if new) in `conditions/` and register it.
-3. Add the policy to `policies.json`.
-4. Add allow, deny and default-deny tests.
-5. Reference the action from the route through `authorize(...)`.
+1. Add or change the policy here.
+2. Add a condition (if needed) to `conditions.py` and register it with its parameter validators.
+3. Add the action to `Action` in `policies.py` and the policy to `policies.json`.
+4. Add positive, negative and boundary tests.
+5. Call `authz.require(...)` from the service that performs the action.
 
-## 11. Non-goals
+## 13. Non-goals
 
-Roles, role hierarchies, groups, permissions tied to roles, per-user permission tables, runtime policy editing through the API, caching of decisions across requests.
+Roles, role hierarchies, groups, permissions attached to users, runtime policy editing through the API, caching decisions across requests.

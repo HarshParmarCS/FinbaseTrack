@@ -25,28 +25,28 @@ Status legend: `[x]` done, `[ ]` not started.
 - Acceptance: migration applies to and reverts from an empty PostgreSQL; models match the migration (no Alembic diff); constraint tests pass.
 - Commit: `feat(db): add relational schema models and initial migration`.
 
-### M2: Users and authentication [ ]
-- Also: Origin-check middleware for mutating requests (moved from M1).
+### M2: Users and authentication [x]
+- Also: CSRF protection (Origin check and double-submit token) and CORS (moved from M1). Auth events are logged to the application log; `activity_logs` rows for auth events arrive with M7.
 - Argon2 hashing, PyJWT access tokens, cookies, `get_current_user`.
 - Endpoints: register, login, logout, me.
 - Tests: duplicate email 409, generic login failure, expired and tampered token 401, cookie flags, logout clears cookies, password never returned or logged.
 - Acceptance: endpoints 2, 3, 5 (cookie part), 6 in `api-contract.md` work as specified.
 - Commit: `feat(auth): implement registration, login, logout and token validation`.
 
-### M3: Refresh token rotation [ ]
+### M3: Refresh token rotation [x] (delivered together with M2)
 - Hashed storage (table exists since M1b), rotation, revocation on logout, family revocation on reuse (stretch).
 - Endpoint: `POST /auth/refresh`.
 - Tests: rotation issues a new pair, old token rejected, expired token rejected, logout revokes, reuse revokes family (if implemented).
 - Acceptance: a session survives access-token expiry via refresh.
 - Commit: `feat(auth): add refresh token rotation`.
 
-### M4: PBAC engine and policies [ ]
-- `authorization/` module: context, registry, engine, conditions, `policies.json` (10 policies), startup validation, `authorize(...)` dependency factory (with test resource loaders).
-- Tests: the full matrix in `authorization-design.md` section 9 at engine level (no database), plus startup validation failures.
-- Acceptance: every policy has allow, deny and default-deny tests; unknown conditions fail startup.
+### M4: PBAC engine and policies [x]
+- `authorization/` module (PEP, PDP, PAP, PIP), `policies.json` with the seven mandatory policies, startup validation, `AuthorizationService` for services and FastAPI providers. No project or task endpoints yet.
+- Tests: the matrix in `authorization-design.md` section 11 (positive, negative, boundary per policy), engine fail-closed behavior, loader rejections, database-backed enforcement (removed member, guessed UUIDs), HTTP 401/403/404, structural checks (no RBAC, no eval).
+- Acceptance: every policy has positive, negative and boundary tests; invalid policy configuration aborts startup.
 - Commit: `feat(authz): add policy decision engine, registry and policies`.
 
-### M5: Projects and members [ ]
+### M5: Projects and members [x]
 - Repositories, services, routers for endpoints 7 to 14. `allowed_actions`, `task_counts` (zero until M6), owner auto-membership.
 - Tests: membership scoping of the list, 404 for non-members, owner-only update, delete and member management, duplicate member 409, unknown email 404, owner removal 422, removed member loses access immediately.
 - Acceptance: the project policy rows of the matrix pass at API level.
@@ -60,7 +60,7 @@ Status legend: `[x]` done, `[ ]` not started.
 - Commit: `feat(tasks): add task APIs with filters, pagination and completion rules`.
 
 ### M7: Audit log, activity and dashboard [ ]
-- Activity helper (writes `activity_logs`) called from services for all mutations and auth events. Endpoints 20 to 22.
+- Activity read side: endpoints 20 to 22. Project and member mutations already write activity rows (M5) and task mutations do from M6; this milestone adds the auth events and the dashboard.
 - Tests: statistics against known fixtures (including overdue and assigned-to-me), activity scoped by membership, audit rows written for each mutation, no secrets in metadata.
 - Acceptance: the dashboard payload matches the contract.
 - Commit: `feat(dashboard): add statistics, activity timeline and audit logging`.
