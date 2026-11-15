@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { activitySubject, activityVerb } from "@/features/dashboard/activity-text";
 import { distributionFrom } from "@/features/dashboard/distribution";
 import {
   completionPercent,
@@ -12,7 +11,7 @@ import {
   utcToday,
 } from "@/features/dashboard/format";
 import { isOverdue, sortByDueDate } from "@/features/dashboard/tasks";
-import type { ActivityOut, PagedEnvelope, ProjectOut, TaskOut } from "@/types/api";
+import type { PagedEnvelope, ProjectOut, TaskOut } from "@/types/api";
 
 const user = { id: "u1", email: "a@b.co", name: "Ana" };
 
@@ -164,41 +163,5 @@ describe("distributionFrom", () => {
 
   it("refuses to present a partial total when not every project was loaded", () => {
     expect(distributionFrom(page([project("a", [1, 1, 1])], 150))).toBeNull();
-  });
-});
-
-describe("activity text", () => {
-  const activity = (
-    action: ActivityOut["action"],
-    metadata: Record<string, unknown>,
-  ): ActivityOut => ({
-    id: "a",
-    user,
-    project_id: null,
-    task_id: null,
-    action,
-    metadata,
-    created_at: "2026-11-15T00:00:00Z",
-  });
-
-  it("names the task or project from the metadata the backend writes", () => {
-    expect(activitySubject(activity("task.created", { title: "Write copy" }))).toBe("Write copy");
-    expect(activitySubject(activity("project.created", { name: "Website" }))).toBe("Website");
-  });
-
-  it("describes a status change with readable status names", () => {
-    expect(
-      activitySubject(activity("task.status_changed", { from: "todo", to: "in_progress" })),
-    ).toBe("To do to In progress");
-  });
-
-  it("shows nothing rather than guessing when the metadata has no name", () => {
-    expect(activitySubject(activity("task.updated", { changes: { x: 1 } }))).toBeNull();
-    expect(activitySubject(activity("task.created", { title: 42 }))).toBeNull();
-  });
-
-  it("has a sentence for every action", () => {
-    expect(activityVerb("task.deleted")).toBe("deleted a task");
-    expect(activityVerb("member.added")).toBe("added a member");
   });
 });

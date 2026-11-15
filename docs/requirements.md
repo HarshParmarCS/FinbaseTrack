@@ -121,7 +121,7 @@ Tier legend: **T1** mandatory in the assignment, **T2** bonus (implemented, cut 
 | A22 | Task status follows a line: `todo` <-> `in_progress` <-> `completed`. Direct `todo` <-> `completed` moves are invalid. Status changes use a dedicated endpoint so that the completion policy cannot be bypassed. |
 | A23 | When a task is already `completed`, editing it must keep it complete (assignee and required fields), because the completion policy is evaluated on the resulting state. |
 | A24 | Text fields and search terms reject the NUL character (422), because PostgreSQL cannot store it. `page` is capped at 100000. |
-| A25 | Authentication events (register, login, logout, refresh reuse detected) are written to `activity_logs` with no project. They appear only in the acting user's own feed (`GET /dashboard/activity`). |
+| A25 | Authentication events (register, login, logout, refresh reuse detected) are written to `activity_logs` with no project. No API endpoint returns them: `GET /dashboard/activity` lists activity in the caller's current projects only (corrected 2026-11-16; the earlier wording said they appear in the user's own feed, which the code never did). |
 | A26 | Accepted risks, not mitigated in this version: no login rate limiting, no purge of expired refresh tokens, no request body size limit, access tokens are valid until expiry (15 minutes) after logout, `/docs` stays enabled in production. |
 | A20 | Dates: `due_date` is a calendar date (`YYYY-MM-DD`). Timestamps are UTC ISO 8601. |
 

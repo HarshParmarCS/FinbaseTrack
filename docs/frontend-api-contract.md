@@ -280,9 +280,24 @@ Status change response:
 ### 5.3 Dashboard and activity
 - `GET /dashboard/stats` returns `DashboardStats { total_projects, active_projects, total_tasks, completed_tasks, pending_tasks, overdue_tasks, assigned_to_me, recent_activity: ActivityOut[] }` (counts only the user's projects; definitions in `docs/requirements.md`).
 - `ActivityOut { id, user: UserOut, project_id|null, task_id|null, action, metadata (free-form object), created_at }`.
-- `GET /dashboard/activity` is the caller's own feed (includes auth events). `GET /projects/{id}/activity` is the project timeline (members only).
+- `GET /dashboard/activity` is the activity of **every project the caller currently belongs to, by any member**, newest first. It is not limited to the caller's own actions, and it never contains authentication events (they have no project) [code: `app/repositories/activity_repository.py` `ActivityQueries.for_member`; verified live on 2026-11-16]. `GET /projects/{id}/activity` is one project's timeline (members only, 404 otherwise). Both order by `created_at` descending, then `id` descending.
+- **Correction:** an earlier version of this file said `/dashboard/activity` was "the caller's own feed (includes auth events)". That was wrong.
 - `action` values: `user.registered, auth.login, auth.logout, auth.refresh_reuse_detected, project.created, project.updated, project.deleted, member.added, member.removed, task.created, task.updated, task.status_changed, task.assigned, task.unassigned, task.deleted` [code: `app/models/enums.py` `ActivityAction`]. The `action` field is typed as plain `string` in OpenAPI, so the union must be kept in the frontend by hand.
-- `metadata` keys vary by action (for example `task.status_changed` has `from`, `to`, `position`; `task.deleted` has `title`, `status`). Treat as `Record<string, unknown>`.
+- `metadata` keys vary by action. Treat it as `Record<string, unknown>`. Keys written by the backend services:
+
+| action | metadata |
+|---|---|
+| `project.created` | `name` |
+| `project.updated` | `changes: { field: [old, new] }` (name, description, status) |
+| `project.deleted` | `name`, `member_count`, `task_count` |
+| `member.added` | `member_user_id` |
+| `member.removed` | `member_user_id`, `unassigned_task_count` |
+| `task.created` | `title`, `status`, `priority`, `assignee_id` |
+| `task.updated` | `changes: { field: [old, new] }` (title, description, priority, due_date) |
+| `task.status_changed` | `from`, `to`, `position` (no title) |
+| `task.assigned` | `assignee_id`, `previous_assignee_id` |
+| `task.unassigned` | `previous_assignee_id`, or `reason: "member_removed"` and `former_assignee_id` |
+| `task.deleted` | `title`, `status` |
 
 Stats example (truncated):
 ```json
@@ -402,6 +417,13 @@ Timestamps are UTC ISO 8601 with `Z`; `due_date` is a plain `YYYY-MM-DD`; `posit
 Task completion percentage is computed in the browser as `completed_tasks / total_tasks` from the statistics, rounded to a whole percent, and is shown as a dash when there are no tasks.
 
 A proposed backend addition that would remove G9 and G11 (not implemented, needs approval): `GET /tasks?assignee_id=me&status=...&due_after=...&sort=due_date` returning the same paged `TaskOut` envelope, limited to the caller's projects.
+
+### Activity-specific gaps (found while building the Activity module)
+| # | Missing from the backend | What the frontend does instead |
+|---|---|---|
+| G13 | No feed of the caller's OWN actions, and authentication events (`user.registered`, `auth.*`) are written but no endpoint returns them. | `/activity` shows "activity in your projects" and marks the caller's own entries "You". It does not filter by actor in the browser, because a filtered page of 20 would be incomplete. |
+| G14 | Activity rows get `created_at = now()` in PostgreSQL, which is the transaction start time. Events written in one transaction (member removed plus the tasks it unassigned; a task edit plus its reassignment) share a timestamp, and the backend breaks the tie by a random UUID. | The order inside such a group is shown as the backend returns it; the frontend cannot recover the real order. A sequence column or a per-row timestamp would fix it. |
+| G15 | Entries carry ids, not names: no project name (except `project.*` metadata), no task title on most task events, no member names. | Names come only from other real responses: the user's project list, the project's member list, the actors of the loaded entries, and titles that newer entries in the same feed reveal. Otherwise the text says "a task", "a member" or "a project". "A project you can no longer open" is used only when the complete project list is loaded. |
 
 No endpoint was found broken. All 23 operations in the live OpenAPI exist, and the live document matches `docs/openapi.json`. The whole backend suite passed (970 tests) at the last run.
 

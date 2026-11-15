@@ -119,6 +119,89 @@ The backend has no cross-project task list, so "My assigned tasks" and "Upcoming
 project with open work (at most 10) and say when a list is partial. The status chart appears only when
 all projects fit in one page. These limits are listed in `docs/frontend-api-contract.md` (G9 to G12).
 
+## Projects
+
+`/projects` (list) and `/projects/[projectId]` (details and members) in `src/features/projects/`.
+
+- **List:** cards with name, description, status, owner, member count, task counts and creation date.
+  Search (`q`), status filter and page live in the URL. Create, edit and delete from the cards.
+- **Details:** overview, task progress, edit, delete, and the member list with add (by email of a
+  registered user) and remove.
+- **Permissions (PBAC):** the UI never decides who may do what. Buttons appear only when the backend
+  lists the action in `allowed_actions` for that user and project, and the backend still enforces every
+  request. If a request is refused with a policy denial (403), the user sees "You do not have
+  permission to do this." followed by the backend's reason.
+- **URL access:** a project id in the address bar grants nothing. The page always asks the backend; for a
+  missing project and for a project the user is not a member of it answers 404, shown as "Project not
+  found" (the two cases are deliberately indistinguishable).
+- **Destructive actions** (delete project, remove member) always ask for confirmation first. Removing a
+  member says that their assigned tasks become unassigned.
+- **Refresh:** successful changes invalidate the project, task, dashboard and activity queries.
+
+The live test `tests/live/projects.live.test.tsx` renders these pages against the real backend with
+three real users (owner, member, outsider). See `pnpm test:live`.
+
+## Tasks
+
+`/projects/[projectId]/tasks` (table) and `/projects/[projectId]/tasks/[taskId]` (details) in
+`src/features/tasks/`. The project page links to them with a **Tasks** button.
+
+- **Table:** title, status (an inline status selector), priority, assignee and due date (overdue in red).
+  Search, status and priority (multi-select), assignee (a member or "Unassigned"), due-date range,
+  "Overdue only", sort (every sort the backend supports) and pagination, all in the URL.
+- **Create and edit dialog:** title, description, priority, due date (date picker) and assignee (the
+  project's members only). Validation mirrors the backend (title 1 to 200, description up to 5000, a
+  real calendar date). Edits send only the fields that changed; clearing a field sends `null`.
+- **Status** is changed only through `PATCH /tasks/{id}/status`, never through the edit dialog. The
+  selector offers the moves the backend accepts (to do, in progress, completed, one step at a time).
+- **Permissions (PBAC):** the UI never decides. Edit, Delete and the status selector follow the task's
+  `allowed_actions` from the backend:
+  - "update" (creator or assignee, while a member) enables editing and the status selector;
+  - "complete" (update AND the completion policy: assignee, title, description, priority and due date)
+    enables "Completed"; until then the option is shown as "not available yet";
+  - "delete" (project owner, only while To do) shows Delete.
+    Every action is still enforced by the backend. A 403 policy denial is shown as "You do not have
+    permission to do this." with the backend's reason, and the view keeps the previous state.
+- **URL access:** a task id in the address bar grants nothing; a task outside the user's projects is
+  "Task not found", and a task shown under the wrong project id is refused.
+
+The live test `tests/live/tasks.live.test.tsx` covers every rule above against the real backend with
+four users (owner, assignee, member, outsider).
+
+## Activity
+
+`src/features/activity/`. One timeline component is used in three places:
+
+- **`/activity`:** `GET /dashboard/activity`, the activity of every project you belong to, by any member.
+  Your own entries say "You". (There is no backend feed of only your own actions, and sign-in
+  events are never returned; see `docs/frontend-api-contract.md`, G13.)
+- **Project page:** `GET /projects/{id}/activity`, that project's timeline.
+- **Dashboard:** the ten recent entries that come with the statistics.
+
+Entries are grouped by day (Today, Yesterday, then dates), newest first as the backend orders them,
+20 per page with **Load more**, and repeated entries are dropped when the feed moves while paging.
+Each entry is a sentence with the actor, the action, the task or project (linked when it still
+exists and you can open it) and the time (`<time>` with the full date for screen readers).
+Names come only from real responses; unknown ones read "a task", "a member" or "a project" (G15).
+The order of events written in the same transaction is not defined by the backend (G14).
+
+## Experience
+
+- **Toasts** (sonner) confirm every successful change. Failures stay next to the control that caused
+  them (inside the dialog, under the form), with the backend's reason.
+- **Confirmation dialogs** for every destructive action (delete project, remove member, delete task).
+- **Forms** all use React Hook Form + Zod with the backend's limits, inline field errors, server 422
+  errors placed on their fields, and disabled submit buttons while saving. The dashboard's quick
+  "New task" uses the same task form as the project pages.
+- **Loading:** a thin progress bar under the top bar while any request runs, plus a skeleton in each
+  section. **Empty and error states** with retry in every list and card.
+- **Error boundaries:** `app/(app)/error.tsx` (inside the shell), `app/error.tsx` (public pages) and
+  `app/global-error.tsx` (root layout). They never show error details.
+- **Keyboard and screen readers:** a "Skip to content" link, a focusable `<main>`, labelled controls,
+  `aria-pressed` filter chips, a keyboard-operable mobile navigation, and reduced motion respected.
+- **Responsive:** the sidebar becomes a slide-in menu below the `lg` breakpoint; tables scroll
+  horizontally on narrow screens.
+
 ## Check the connection
 
 With the backend running, open `/diagnostics` (public, not in the sidebar). It calls the health endpoint and

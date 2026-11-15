@@ -1,5 +1,10 @@
 import type { FieldPath, FieldValues, UseFormSetError } from "react-hook-form";
-import { getErrorMessage, getFieldErrors, isApiError } from "@/lib/api/errors";
+import {
+  getActionErrorMessage,
+  getErrorMessage,
+  getFieldErrors,
+  isApiError,
+} from "@/lib/api/errors";
 
 type Options = { emailConflictField?: string };
 
@@ -36,5 +41,6 @@ export function applyApiError<T extends FieldValues>(
     return placed > 0 ? null : error.message;
   }
 
-  return error.requestId ? `${error.message} (reference ${error.requestId})` : error.message;
+  const message = getActionErrorMessage(error);
+  return error.requestId ? `${message} (reference ${error.requestId})` : message;
 }

@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "API diagnostics" };
 // Public on purpose: it must work while signed out (a 401 from /auth/me is a healthy answer).
 export default function DiagnosticsPage() {
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-10">
+    <main className="mx-auto w-full max-w-3xl space-y-6 px-4 py-10">
       <PageHeader
         title="API diagnostics"
         description="Checks that this app can talk to the running backend. It uses no sample data."

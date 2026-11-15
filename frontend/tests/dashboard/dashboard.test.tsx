@@ -62,6 +62,12 @@ const healthy = (): Backend => ({
   },
 });
 
+/** A dashboard section, found by its heading. */
+async function card(title: string): Promise<HTMLElement> {
+  const heading = await screen.findByRole("heading", { level: 2, name: title });
+  return heading.closest('[data-slot="card"]') as HTMLElement;
+}
+
 async function renderDashboard() {
   const view = renderWithAuth(<DashboardView />);
   await screen.findByRole("heading", { level: 1 });
@@ -99,7 +105,11 @@ describe("dashboard with data", () => {
     serve(fetchMock, healthy());
     await renderDashboard();
 
-    expect(await screen.findByText("Write copy", { selector: "p.truncate" })).toBeInTheDocument();
+    const myTasks = await card("My assigned tasks");
+    expect(await within(myTasks).findByRole("link", { name: "Write copy" })).toHaveAttribute(
+      "href",
+      "/projects/p1/tasks/mine-p1",
+    );
     expect(await screen.findByText("Ship launch page")).toBeInTheDocument();
     expect(screen.getByText("2 assigned to you and not completed")).toBeInTheDocument();
     expect(screen.getByText("Old site")).toBeInTheDocument();
@@ -109,7 +119,8 @@ describe("dashboard with data", () => {
       screen.getByRole("img", { name: "To do: 2, In progress: 1, Completed: 5" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Ben Carter")).toBeInTheDocument();
-    expect(screen.getByText(/created a task/)).toBeInTheDocument();
+    expect(screen.getByText(/created the task/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Old site" })).toHaveAttribute("href", "/projects/p2");
   });
 
   it("asks the backend for exactly the tasks it needs, and only in projects with open work", async () => {
@@ -218,7 +229,9 @@ describe("dashboard loading and errors", () => {
     failing = false;
     await user.click(screen.getAllByRole("button", { name: "Try again" })[0]);
 
-    expect(await screen.findByText("Write copy", { selector: "p.truncate" })).toBeInTheDocument();
+    expect(
+      await within(await card("My assigned tasks")).findByRole("link", { name: "Write copy" }),
+    ).toBeInTheDocument();
   });
 
   it("does not show a partial status breakdown when there are more projects than one page", async () => {

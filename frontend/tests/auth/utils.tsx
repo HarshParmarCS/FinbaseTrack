@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { vi } from "vitest";
+import { Toaster } from "@/components/providers/toaster";
 import { AuthProvider } from "@/features/auth/auth-provider";
 import { setSessionExpiredHandler } from "@/lib/api/client";
 
@@ -31,6 +32,7 @@ export function renderWithAuth(ui: ReactElement) {
   const view = render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>{ui}</AuthProvider>
+      <Toaster />
     </QueryClientProvider>,
   );
   return { ...view, queryClient };

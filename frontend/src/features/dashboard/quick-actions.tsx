@@ -10,10 +10,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CreateProjectDialog } from "@/features/projects/create-project-dialog";
-import { CreateTaskDialog } from "@/features/tasks/create-task-dialog";
+import { useDashboardProjects } from "@/features/dashboard/hooks";
+import { TaskFormDialog } from "@/features/tasks/task-form-dialog";
 
 export function QuickActions() {
   const [dialog, setDialog] = useState<"project" | "task" | null>(null);
+  const projects = useDashboardProjects();
+  // The backend's answer per project: only those listing create_task are offered.
+  const taskProjects = (projects.data?.data ?? []).filter((project) =>
+    project.allowed_actions.includes("create_task"),
+  );
 
   return (
     <>
@@ -40,7 +46,13 @@ export function QuickActions() {
         open={dialog === "project"}
         onOpenChange={(o) => !o && setDialog(null)}
       />
-      <CreateTaskDialog open={dialog === "task"} onOpenChange={(o) => !o && setDialog(null)} />
+      {dialog === "task" ? (
+        <TaskFormDialog
+          projectId={null}
+          projectOptions={taskProjects}
+          onOpenChange={(open) => !open && setDialog(null)}
+        />
+      ) : null}
     </>
   );
 }

@@ -148,3 +148,23 @@ export function getFieldErrors(error: unknown): Record<string, string> {
 export function isUnauthorized(error: unknown): boolean {
   return isApiError(error) && error.status === 401;
 }
+
+/**
+ * True when the backend's policy engine denied the action: a 403 that names the policy.
+ * (A 403 without a policy id is something else, such as a CSRF or origin failure.)
+ */
+export function isPermissionDenied(error: unknown): boolean {
+  return (
+    isApiError(error) &&
+    error.status === 403 &&
+    error.details.some((detail) => Boolean(detail.policy_id))
+  );
+}
+
+/** A message for a failed action. Policy denials say so clearly and keep the backend's reason. */
+export function getActionErrorMessage(error: unknown, fallback = "Something went wrong."): string {
+  if (isPermissionDenied(error)) {
+    return `You do not have permission to do this. ${(error as ApiError).message}`;
+  }
+  return getErrorMessage(error, fallback);
+}

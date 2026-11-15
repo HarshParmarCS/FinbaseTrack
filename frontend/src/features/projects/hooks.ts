@@ -25,10 +25,11 @@ export function useProjects(params: ProjectListParams = {}) {
   });
 }
 
-export function useProject(projectId: string) {
+export function useProject(projectId: string, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: projectKeys.detail(projectId),
     queryFn: ({ signal }) => getProject(projectId, signal),
+    enabled: options.enabled ?? true,
   });
 }
 

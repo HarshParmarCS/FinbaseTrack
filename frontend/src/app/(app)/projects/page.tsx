@@ -1,19 +1,14 @@
-import { FolderKanban } from "lucide-react";
 import type { Metadata } from "next";
-import { EmptyState } from "@/components/shared/empty-state";
-import { PageHeader } from "@/components/shared/page-header";
+import { Suspense } from "react";
+import { ProjectsView } from "@/features/projects/projects-view";
 
 export const metadata: Metadata = { title: "Projects" };
 
 export default function ProjectsPage() {
+  // useSearchParams (filters live in the URL) must sit inside a Suspense boundary.
   return (
-    <>
-      <PageHeader title="Projects" description="Every project you own or belong to." />
-      <EmptyState
-        icon={FolderKanban}
-        title="No projects to show yet"
-        description="Your projects will appear here once the app is connected to your account."
-      />
-    </>
+    <Suspense>
+      <ProjectsView />
+    </Suspense>
   );
 }

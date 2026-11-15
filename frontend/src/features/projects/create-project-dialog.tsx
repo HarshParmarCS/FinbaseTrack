@@ -20,12 +20,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCreateProject } from "@/features/projects/hooks";
 import { createProjectSchema, type CreateProjectValues } from "@/features/projects/schemas";
 import { applyApiError } from "@/lib/api/form-errors";
+import type { ProjectDetailOut } from "@/types/api";
+import { toast } from "sonner";
 
 const FIELDS = ["name", "description"] as const;
 
-type Props = { open: boolean; onOpenChange: (open: boolean) => void };
+type Props = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Called with the created project, after the dialog has closed. */
+  onCreated?: (project: ProjectDetailOut) => void;
+};
 
-export function CreateProjectDialog({ open, onOpenChange }: Props) {
+export function CreateProjectDialog({ open, onOpenChange, onCreated }: Props) {
   const createProject = useCreateProject();
   const [formError, setFormError] = useState<string | null>(null);
   const {
@@ -50,11 +57,13 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
     try {
-      await createProject.mutateAsync({
+      const created = await createProject.mutateAsync({
         name: values.name,
         ...(values.description ? { description: values.description } : {}),
       });
       handleOpenChange(false);
+      toast.success(`Project “${created.name}” created`);
+      onCreated?.(created);
     } catch (error) {
       setFormError(applyApiError(error, FIELDS, setError));
     }

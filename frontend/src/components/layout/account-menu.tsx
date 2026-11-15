@@ -12,16 +12,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { initials } from "@/lib/format";
 import { useAuth } from "@/features/auth/auth-provider";
-
-function initials(name: string): string {
-  const letters = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "");
-  return letters.join("") || "?";
-}
+import { toast } from "sonner";
 
 export function AccountMenu() {
   const { user, signOut } = useAuth();
@@ -29,7 +22,8 @@ export function AccountMenu() {
 
   async function handleSignOut() {
     setFailed(false);
-    if (!(await signOut())) setFailed(true);
+    if (await signOut()) toast.success("You are signed out");
+    else setFailed(true);
   }
 
   if (!user) return null;

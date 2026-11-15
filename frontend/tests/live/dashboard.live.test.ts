@@ -14,7 +14,7 @@ vi.mock("@/config/env", () => ({
 }));
 
 import { register } from "@/features/auth/api";
-import { activitySubject, activityVerb } from "@/features/dashboard/activity-text";
+import { describeActivity, learnFromEntries } from "@/features/activity/describe";
 import { getDashboardStats } from "@/features/dashboard/api";
 import { distributionFrom } from "@/features/dashboard/distribution";
 import { completionPercent, utcToday } from "@/features/dashboard/format";
@@ -119,18 +119,33 @@ describe("dashboard data against the real backend", () => {
 
   it("writes activity metadata the UI can name (task titles and status moves)", async () => {
     const { recent_activity: activity } = await getDashboardStats();
+    const learned = learnFromEntries(activity);
+    const lookups = {
+      currentUserId: me.id,
+      projects: new Map([[project.id, project.name]]),
+      projectsComplete: true,
+      ...learned,
+    };
+    const sentence = (entry: (typeof activity)[number]) => {
+      const d = describeActivity(entry, lookups);
+      return [d.actor, d.verb, d.subject?.label, d.detail].filter(Boolean).join(" ");
+    };
 
-    const created = activity.filter((a) => a.action === "task.created");
-    expect(created.map((a) => activitySubject(a)).sort()).toEqual([
-      "A open mine",
-      "B overdue mine",
-      "C open unassigned",
-      "D done",
+    const created = activity
+      .filter((a) => a.action === "task.created")
+      .map(sentence)
+      .sort();
+    expect(created).toEqual([
+      "You created the task A open mine",
+      "You created the task B overdue mine",
+      "You created the task C open unassigned",
+      "You created the task D done",
     ]);
+    // The status change has no title in its metadata; the title comes from the task's own
+    // "created" entry in the same feed.
     const moved = activity.find((a) => a.action === "task.status_changed");
-    expect(moved && activitySubject(moved)).toContain("To do to In progress");
-    for (const entry of activity) {
-      expect(activityVerb(entry.action)).not.toBe("made a change"); // every real action is known
-    }
+    expect(moved && sentence(moved)).toBe("You moved A open mine from To do to In progress");
+    for (const entry of activity)
+      expect(describeActivity(entry, lookups).verb).not.toBe("made a change");
   });
 });

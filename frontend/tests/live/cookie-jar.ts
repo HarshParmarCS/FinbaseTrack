@@ -71,6 +71,11 @@ export class CookieJar {
     this.syncDocument();
   }
 
+  /** Make this jar the "browser" in the test: expose its readable csrf_token to page code. */
+  activate(): void {
+    this.syncDocument();
+  }
+
   private syncDocument(): void {
     const csrf = this.cookies.get("csrf_token");
     document.cookie = csrf ? `csrf_token=${csrf.value}; path=/` : "csrf_token=; max-age=0; path=/";

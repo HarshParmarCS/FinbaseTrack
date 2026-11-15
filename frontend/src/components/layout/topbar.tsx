@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { AccountMenu } from "@/components/layout/account-menu";
+import { GlobalProgress } from "@/components/layout/global-progress";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { findNavItem } from "@/config/navigation";
 
@@ -16,6 +17,7 @@ export function Topbar() {
       <div className="ml-auto">
         <AccountMenu />
       </div>
+      <GlobalProgress />
     </header>
   );
 }

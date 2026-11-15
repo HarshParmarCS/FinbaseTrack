@@ -8,7 +8,8 @@ export default defineConfig({
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   test: {
     environment: "jsdom",
-    include: ["tests/live/**/*.live.test.ts"],
+    setupFiles: ["tests/setup.ts"],
+    include: ["tests/live/**/*.live.test.{ts,tsx}"],
     testTimeout: 20_000,
   },
 });

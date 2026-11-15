@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { describeDue } from "@/features/dashboard/format";
 import { isOverdue } from "@/features/dashboard/tasks";
@@ -26,7 +27,12 @@ export function TaskRows({ tasks, projects, today }: TaskRowsProps) {
         return (
           <li key={task.id} className="flex items-center justify-between gap-3 py-2.5">
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{task.title}</p>
+              <Link
+                href={`/projects/${task.project_id}/tasks/${task.id}`}
+                className="block truncate text-sm font-medium hover:underline"
+              >
+                {task.title}
+              </Link>
               <p className="truncate text-xs text-muted-foreground">
                 {names.get(task.project_id) ?? "Project"}
               </p>

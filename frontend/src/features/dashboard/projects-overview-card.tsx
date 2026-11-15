@@ -44,7 +44,12 @@ export function ProjectsOverviewCard() {
           return (
             <li key={project.id} className="space-y-2 py-3">
               <div className="flex items-center justify-between gap-3">
-                <p className="truncate text-sm font-medium">{project.name}</p>
+                <Link
+                  href={`/projects/${project.id}`}
+                  className="truncate text-sm font-medium hover:underline"
+                >
+                  {project.name}
+                </Link>
                 {project.status === "archived" ? <Badge variant="outline">Archived</Badge> : null}
               </div>
               {percent === null ? (
