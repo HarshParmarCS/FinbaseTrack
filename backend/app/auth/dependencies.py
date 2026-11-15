@@ -8,6 +8,7 @@ from app.core.config import Settings, get_settings
 from app.core.cookies import ACCESS_COOKIE
 from app.database.session import DbSession
 from app.models import User
+from app.repositories.activity_repository import ActivityRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
@@ -16,7 +17,7 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
 
 
 def get_auth_service(db: DbSession) -> AuthService:
-    return AuthService(db, UserRepository(db), RefreshTokenRepository(db))
+    return AuthService(db, UserRepository(db), RefreshTokenRepository(db), ActivityRepository(db))
 
 
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]

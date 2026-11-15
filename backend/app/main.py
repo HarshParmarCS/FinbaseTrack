@@ -11,6 +11,7 @@ from app.core.config import Settings, get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging
 from app.core.middleware import register_middleware
+from app.core.openapi import install_openapi
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         version="0.1.0",
-        description="FinTasks project management API.",
+        description=(
+            "FinTasks project management API.\n\n"
+            "Authentication uses HttpOnly cookies (`access_token`, `refresh_token`) set by "
+            "register/login. State-changing requests that carry cookies must also send the "
+            "`X-CSRF-Token` header (the value of the `csrf_token` cookie). Authorization is "
+            "policy-based (PBAC): see docs/authorization-design.md."
+        ),
     )
     # Fail fast: an invalid or incomplete policy file stops the application from starting.
     registry = load_policy_registry(settings.policy_file)
@@ -33,6 +40,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     register_middleware(app, settings)
     register_exception_handlers(app)
     app.include_router(api_router)
+    install_openapi(app)
 
     logger.info("Application initialized (environment=%s)", settings.environment)
     return app

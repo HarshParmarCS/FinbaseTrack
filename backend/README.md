@@ -1,6 +1,6 @@
 # FinTasks Backend
 
-FastAPI + SQLAlchemy 2.0 + PostgreSQL. Current state: **milestones M1 to M5** (foundation, schema, authentication, PBAC engine, project and member management). Exposed: health, `/api/v1/auth/*`, `/api/v1/projects` and `/api/v1/projects/{id}/members`. No task endpoints yet. Project services call the PBAC engine before every mutation.
+FastAPI + SQLAlchemy 2.0 + PostgreSQL. Current state: **milestones M1 to M7** (foundation, schema, authentication, PBAC engine, projects and members, tasks, dashboard and activity). Exposed: health, `/api/v1/auth/*`, `/api/v1/projects` and `/api/v1/projects/{id}/members`. `/api/v1/projects/{id}/tasks`, `/api/v1/tasks/{id}` and `/api/v1/tasks/{id}/status`. Every service calls the PBAC engine before mutating. Also exposed: `/api/v1/dashboard/stats`, `/api/v1/dashboard/activity` and `/api/v1/projects/{id}/activity`. Not built yet: frontend.
 
 All commands below run from the `backend/` folder.
 
@@ -119,7 +119,11 @@ Swagger UI can register, log in and call `/auth/me` (cookies are stored by the b
 pytest                    # needs TEST_DATABASE_URL (see step 3); migrates the test database itself
 ruff check . && ruff format --check .
 mypy
+pytest --cov=app          # coverage (99% at M7)
+python -m scripts.generate_api_docs   # regenerates docs/api-contract.md section 3, docs/openapi.json, app/api/examples.json
 ```
+
+`tests/audit/test_guards.py` fails if the contract or `docs/openapi.json` is out of date, so run the generator after changing a route or schema.
 
 ## Layout
 

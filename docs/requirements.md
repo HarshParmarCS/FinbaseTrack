@@ -118,6 +118,11 @@ Tier legend: **T1** mandatory in the assignment, **T2** bonus (implemented, cut 
 | A18 | A task's creator who is later removed from the project loses update rights, because update requires current membership. |
 | A19 | Creating a project requires only authentication. It is expressed as a `project.create` policy added with the project endpoints (M5), because every action not covered by a policy is denied. |
 | A21 | The database enforces that the project owner is a member (deferred composite foreign key), that assignees are members of the task's project (composite foreign key), unique membership, and valid status and priority values. |
+| A22 | Task status follows a line: `todo` <-> `in_progress` <-> `completed`. Direct `todo` <-> `completed` moves are invalid. Status changes use a dedicated endpoint so that the completion policy cannot be bypassed. |
+| A23 | When a task is already `completed`, editing it must keep it complete (assignee and required fields), because the completion policy is evaluated on the resulting state. |
+| A24 | Text fields and search terms reject the NUL character (422), because PostgreSQL cannot store it. `page` is capped at 100000. |
+| A25 | Authentication events (register, login, logout, refresh reuse detected) are written to `activity_logs` with no project. They appear only in the acting user's own feed (`GET /dashboard/activity`). |
+| A26 | Accepted risks, not mitigated in this version: no login rate limiting, no purge of expired refresh tokens, no request body size limit, access tokens are valid until expiry (15 minutes) after logout, `/docs` stays enabled in production. |
 | A20 | Dates: `due_date` is a calendar date (`YYYY-MM-DD`). Timestamps are UTC ISO 8601. |
 
 ## 4. Out of scope

@@ -2,8 +2,9 @@
 
 import uuid
 from datetime import datetime
+from typing import Any, cast
 
-from sqlalchemy import select, update
+from sqlalchemy import CursorResult, select, update
 from sqlalchemy.orm import Session
 
 from app.models import RefreshToken
@@ -37,4 +38,4 @@ class RefreshTokenRepository:
             .values(revoked_at=revoked_at)
             .execution_options(synchronize_session="fetch")
         )
-        return int(result.rowcount)  # type: ignore[attr-defined]  # CursorResult for DML
+        return int(cast(CursorResult[Any], result).rowcount)

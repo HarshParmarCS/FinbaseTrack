@@ -13,6 +13,7 @@ from app.authorization.context import (
     AuthorizationContext,
     ProjectFacts,
     TaskChanges,
+    TaskFacts,
 )
 from app.authorization.decision import Decision, ReasonCode
 from app.authorization.engine import PolicyEngine
@@ -26,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_DENIAL_MESSAGE = "You are not allowed to perform this action."
 COMPLETED = "completed"
+TASK_LEVEL_ACTIONS = (Action.TASK_UPDATE, Action.TASK_DELETE, Action.TASK_COMPLETE)
 # Evaluated against already-loaded project facts to fill `allowed_actions`.
 PROJECT_LEVEL_ACTIONS = (
     Action.PROJECT_UPDATE,
@@ -82,6 +84,33 @@ class AuthorizationService:
             ).allowed
         )
 
+    def allowed_task_actions(
+        self, user: User, project: ProjectFacts, task: TaskFacts, *, is_member: bool
+    ) -> frozenset[Action]:
+        """Task-level actions for already-loaded facts (no queries), for `allowed_actions`.
+
+        ``task.complete`` is evaluated as if the task were being completed now. A task's
+        assignee is always a current member (guaranteed by the composite foreign key
+        ``(project_id, assignee_id) -> project_members``), so no extra lookup is needed.
+        """
+        subject = self.information.subject(user)
+        has_assignee = task.assignee_id is not None
+        allowed: set[Action] = set()
+        for action in TASK_LEVEL_ACTIONS:
+            proposed = replace(task, status=COMPLETED) if action is Action.TASK_COMPLETE else None
+            ctx = AuthorizationContext(
+                subject=subject,
+                action=action.value,
+                project=project,
+                is_project_member=is_member,
+                task=task,
+                proposed_task=proposed,
+                assignee_is_project_member=has_assignee,
+            )
+            if self.engine.evaluate(ctx).allowed:
+                allowed.add(action)
+        return frozenset(allowed)
+
     # ---- enforcing --------------------------------------------------------------------------
 
     def require(
@@ -109,18 +138,23 @@ class AuthorizationService:
     ) -> AuthorizationContext:
         """task.create, plus task.complete when the new task would already be completed."""
         ctx = self.require(user, Action.TASK_CREATE, project_id=project_id, changes=changes)
-        return self._also_require_completion(ctx)
+        return self.require_completion_if_completed(ctx)
 
     def require_task_update(
         self, user: User, task_id: uuid.UUID, changes: TaskChanges
     ) -> AuthorizationContext:
         """task.update, plus task.complete when the RESULTING status is completed."""
         ctx = self.require(user, Action.TASK_UPDATE, task_id=task_id, changes=changes)
-        return self._also_require_completion(ctx)
+        return self.require_completion_if_completed(ctx)
 
     # ---- internals --------------------------------------------------------------------------
 
-    def _also_require_completion(self, ctx: AuthorizationContext) -> AuthorizationContext:
+    def require_completion_if_completed(self, ctx: AuthorizationContext) -> AuthorizationContext:
+        """Also enforce ``task.complete`` when the task would be completed by this change.
+
+        Public so that a service can validate business rules (for example the assignee) between
+        the base check and the completion check, keeping 404, 422 and 403 in a sensible order.
+        """
         resulting = ctx.resulting_task
         if resulting is not None and str(resulting.status) == COMPLETED:
             # Same facts, different action: both decisions describe the same moment.

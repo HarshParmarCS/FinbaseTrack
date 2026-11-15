@@ -1,0 +1,1284 @@
+{
+  "DELETE /api/v1/projects/{project_id}": {
+    "request": {
+      "method": "DELETE",
+      "path": "/api/v1/projects/00000000-0000-4000-8000-000000000005",
+      "body": null,
+      "authenticated": true,
+      "csrf": true
+    },
+    "error": {
+      "status": 403,
+      "body": {
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "Only the project owner can delete a project.",
+          "details": [
+            {
+              "field": null,
+              "message": "Only the project owner can delete a project.",
+              "policy_id": "project-delete"
+            }
+          ],
+          "request_id": "00000000-0000-4000-8000-000000000034"
+        }
+      },
+      "set_cookie": []
+    },
+    "success": {
+      "status": 204,
+      "body": null,
+      "set_cookie": []
+    }
+  },
+  "DELETE /api/v1/projects/{project_id}/members/{user_id}": {
+    "request": {
+      "method": "DELETE",
+      "path": "/api/v1/projects/00000000-0000-4000-8000-000000000005/members/00000000-0000-4000-8000-000000000009",
+      "body": null,
+      "authenticated": true,
+      "csrf": true
+    },
+    "error": {
+      "status": 422,
+      "body": {
+        "error": {
+          "code": "BUSINESS_RULE_VIOLATION",
+          "message": "The project owner cannot be removed from the project.",
+          "details": [],
+          "request_id": "00000000-0000-4000-8000-000000000033"
+        }
+      },
+      "set_cookie": []
+    },
+    "success": {
+      "status": 204,
+      "body": null,
+      "set_cookie": []
+    }
+  },
+  "DELETE /api/v1/tasks/{task_id}": {
+    "request": {
+      "method": "DELETE",
+      "path": "/api/v1/tasks/00000000-0000-4000-8000-000000000020",
+      "body": null,
+      "authenticated": true,
+      "csrf": true
+    },
+    "error": {
+      "status": 403,
+      "body": {
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "Only the project owner can delete a task, and only while its status is todo.",
+          "details": [
+            {
+              "field": null,
+              "message": "Only the project owner can delete a task, and only while its status is todo.",
+              "policy_id": "task-delete"
+            }
+          ],
+          "request_id": "00000000-0000-4000-8000-000000000019"
+        }
+      },
+      "set_cookie": []
+    },
+    "success": {
+      "status": 204,
+      "body": null,
+      "set_cookie": []
+    }
+  },
+  "GET /api/v1/auth/me": {
+    "request": {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "body": null,
+      "authenticated": true,
+      "csrf": false
+    },
+    "success": {
+      "status": 200,
+      "body": {
+        "data": {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "email": "ana@example.com",
+          "name": "Ana Lopez"
+        }
+      },
+      "set_cookie": []
+    }
+  },
+  "GET /api/v1/dashboard/activity": {
+    "request": {
+      "method": "GET",
+      "path": "/api/v1/dashboard/activity?page=1&limit=3",
+      "body": null,
+      "authenticated": true,
+      "csrf": false
+    },
+    "success": {
+      "status": 200,
+      "body": {
+        "data": [
+          {
+            "id": "00000000-0000-4000-8000-000000000021",
+            "user": {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "email": "ana@example.com",
+              "name": "Ana Lopez"
+            },
+            "project_id": "00000000-0000-4000-8000-000000000005",
+            "task_id": "00000000-0000-4000-8000-000000000020",
+            "action": "task.deleted",
+            "metadata": {
+              "title": "Throwaway idea",
+              "status": "todo"
+            },
+            "created_at": "2026-11-15T10:00:07Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000022",
+            "user": {
+              "id": "00000000-0000-4000-8000-000000000009",
+              "email": "cy@example.com",
+              "name": "Cy Dunn"
+            },
+            "project_id": "00000000-0000-4000-8000-000000000005",
+            "task_id": "00000000-0000-4000-8000-000000000014",
+            "action": "task.status_changed",
+            "metadata": {
+              "to": "completed",
+              "from": "in_progress",
+              "position": 1024.0
+            },
+            "created_at": "2026-11-15T10:00:08Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000023",
+            "user": {
+              "id": "00000000-0000-4000-8000-000000000007",
+              "email": "ben@example.com",
+              "name": "Ben Carter"
+            },
+            "project_id": "00000000-0000-4000-8000-000000000005",
+            "task_id": "00000000-0000-4000-8000-000000000014",
+            "action": "task.status_changed",
+            "metadata": {
+              "to": "in_progress",
+              "from": "todo",
+              "position": 2048.0
+            },
+            "created_at": "2026-11-15T10:00:06Z"
+          }
+        ],
+        "meta": {
+          "page": 1,
+          "page_size": 3,
+          "total": 12,
+          "total_pages": 4
+        }
+      },
+      "set_cookie": []
+    }
+  },
+  "GET /api/v1/dashboard/stats": {
+    "request": {
+      "method": "GET",
+      "path": "/api/v1/dashboard/stats",
+      "body": null,
+      "authenticated": true,
+      "csrf": false
+    },
+    "success": {
+      "status": 200,
+      "body": {
+        "data": {
+          "total_projects": 1,
+          "active_projects": 1,
+          "total_tasks": 3,
+          "completed_tasks": 1,
+          "pending_tasks": 2,
+          "overdue_tasks": 1,
+          "assigned_to_me": 0,
+          "recent_activity": [
+            {
+              "id": "00000000-0000-4000-8000-000000000021",
+              "user": {
+                "id": "00000000-0000-4000-8000-000000000001",
+                "email": "ana@example.com",
+                "name": "Ana Lopez"
+              },
+              "project_id": "00000000-0000-4000-8000-000000000005",
+              "task_id": "00000000-0000-4000-8000-000000000020",
+              "action": "task.deleted",
+              "metadata": {
+                "title": "Throwaway idea",
+                "status": "todo"
+              },
+              "created_at": "2026-11-15T10:00:07Z"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000022",
+              "user": {
+                "id": "00000000-0000-4000-8000-000000000009",
+                "email": "cy@example.com",
+                "name": "Cy Dunn"
+              },
+              "project_id": "00000000-0000-4000-8000-000000000005",
+              "task_id": "00000000-0000-4000-8000-000000000014",
+              "action": "task.status_changed",
+              "metadata": {
+                "to": "completed",
+                "from": "in_progress",
+                "position": 1024.0
+              },
+              "created_at": "2026-11-15T10:00:08Z"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000023",
+              "user": {
+                "id": "00000000-0000-4000-8000-000000000007",
+                "email": "ben@example.com",
+                "name": "Ben Carter"
+              },
+              "project_id": "00000000-0000-4000-8000-000000000005",
+              "task_id": "00000000-0000-4000-8000-000000000014",
+              "action": "task.status_changed",
+              "metadata": {
+                "to": "in_progress",
+                "from": "todo",
+                "position": 2048.0
+              },
+              "created_at": "2026-11-15T10:00:06Z"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000024",
+              "user": {
+                "id": "00000000-0000-4000-8000-000000000007",
+                "email": "ben@example.com",
+                "name": "Ben Carter"
+              },
+              "project_id": "00000000-0000-4000-8000-000000000005",
+              "task_id": "00000000-0000-4000-8000-000000000014",
+              "action": "task.updated",
+              "metadata": {
+                "changes": {
+                  "due_date": [
+                    "2099-12-31",
+                    "2099-06-30"
+                  ],
+                  "priority": [
+                    "high",
+                    "medium"
+                  ]
+                }
+              },
+              "created_at": "2026-11-15T10:00:05Z"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000025",
+              "user": {
+                "id": "00000000-0000-4000-8000-000000000007",
+                "email": "ben@example.com",
+                "name": "Ben Carter"
+              },
+              "project_id": "00000000-0000-4000-8000-000000000005",
+              "task_id": "00000000-0000-4000-8000-000000000018",
+              "action": "task.created",
+              "metadata": {
+                "title": "Build API",
+                "status": "in_progress",
+                "priority": "medium",
+                "assignee_id": null
+              },
+              "created_at": "2026-11-15T10:00:09Z"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000026",
+              "user": {
+                "id": "00000000-0000-4000-8000-000000000007",
+                "email": "ben@example.com",
+                "name": "Ben Carter"
+              },
+              "project_id": "00000000-0000-4000-8000-000000000005",
+              "task_id": "00000000-0000-4000-8000-000000000020",
+              "action": "task.created",
+              "metadata": {
+                "title": "Throwaway idea",
+                "status": "todo",
+                "priority": "medium",
+                "assignee_id": null
+              },
+              "created_at": "2026-11-15T10:00:10Z"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000027",
+              "user": {
+                "id": "00000000-0000-4000-8000-000000000007",
+                "email": "ben@example.com",
+                "name": "Ben Carter"
+              },
+              "project_id": "00000000-0000-4000-8000-000000000005",
+              "task_id": "00000000-0000-4000-8000-000000000028",
+              "action": "task.created",
+              "metadata": {
+                "title": "Fix signup bug",
+                "status": "todo",
+                "priority": "medium",
+                "assignee_id": "00000000-0000-4000-8000-000000000007"
+              },
+              "created_at": "2026-11-15T10:00:11Z"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000029",
+              "user": {
+                "id": "00000000-0000-4000-8000-000000000007",
+                "email": "ben@example.com",
+                "name": "Ben Carter"
+              },
+              "project_id": "00000000-0000-4000-8000-000000000005",
+              "task_id": "00000000-0000-4000-8000-000000000014",
+              "action": "task.created",
+              "metadata": {
+                "title": "Design login page",
+                "status": "todo",
+                "priority": "high",
+                "assignee_id": "00000000-0000-4000-8000-000000000009"
+              },
+              "created_at": "2026-11-15T10:00:04Z"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000030",
+              "user": {
+                "id": "00000000-0000-4000-8000-000000000001",
+                "email": "ana@example.com",
+                "name": "Ana Lopez"
+              },
+              "project_id": "00000000-0000-4000-8000-000000000005",
+              "task_id": null,
+              "action": "project.updated",
+              "metadata": {
+                "changes": {
+                  "description": [
+                    "Q4 launch",
+                    "Q4 launch of the new marketing site"
+                  ]
+                }
+              },
+              "created_at": "2026-11-15T10:00:03Z"
+            },
+            {
+              "id": "00000000-0000-4000-8000-000000000031",
+              "user": {
+                "id": "00000000-0000-4000-8000-000000000001",
+                "email": "ana@example.com",
+                "name": "Ana Lopez"
+              },
+              "project_id": "00000000-0000-4000-8000-000000000005",
+              "task_id": null,
+              "action": "member.added",
+              "metadata": {
+                "member_user_id": "00000000-0000-4000-8000-000000000009"
+              },
+              "created_at": "2026-11-15T10:00:02Z"
+            }
+          ]
+        }
+      },
+      "set_cookie": []
+    }
+  },
+  "GET /api/v1/health": {
+    "request": {
+      "method": "GET",
+      "path": "/api/v1/health",
+      "body": null,
+      "authenticated": false,
+      "csrf": false
+    },
+    "success": {
+      "status": 200,
+      "body": {
+        "data": {
+          "status": "ok"
+        }
+      },
+      "set_cookie": []
+    }
+  },
+  "GET /api/v1/projects": {
+    "request": {
+      "method": "GET",
+      "path": "/api/v1/projects?q=web&page_size=10",
+      "body": null,
+      "authenticated": true,
+      "csrf": false
+    },
+    "success": {
+      "status": 200,
+      "body": {
+        "data": [
+          {
+            "id": "00000000-0000-4000-8000-000000000005",
+            "name": "Website redesign",
+            "description": "Q4 launch",
+            "status": "active",
+            "owner": {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "email": "ana@example.com",
+              "name": "Ana Lopez"
+            },
+            "member_count": 3,
+            "task_counts": {
+              "todo": 0,
+              "in_progress": 0,
+              "completed": 0
+            },
+            "allowed_actions": [
+              "create_task"
+            ],
+            "created_at": "2026-11-15T10:00:00Z",
+            "updated_at": "2026-11-15T10:00:00Z"
+          }
+        ],
+        "meta": {
+          "page": 1,
+          "page_size": 10,
+          "total": 1,
+          "total_pages": 1
+        }
+      },
+      "set_cookie": []
+    }
+  },
+  "GET /api/v1/projects/{project_id}": {
+    "request": {
+      "method": "GET",
+      "path": "/api/v1/projects/00000000-0000-4000-8000-000000000005",
+      "body": null,
+      "authenticated": true,
+      "csrf": false
+    },
+    "success": {
+      "status": 200,
+      "body": {
+        "data": {
+          "id": "00000000-0000-4000-8000-000000000005",
+          "name": "Website redesign",
+          "description": "Q4 launch",
+          "status": "active",
+          "owner": {
+            "id": "00000000-0000-4000-8000-000000000001",
+            "email": "ana@example.com",
+            "name": "Ana Lopez"
+          },
+          "member_count": 3,
+          "task_counts": {
+            "todo": 0,
+            "in_progress": 0,
+            "completed": 0
+          },
+          "allowed_actions": [
+            "update",
+            "delete",
+            "manage_members",
+            "create_task"
+          ],
+          "created_at": "2026-11-15T10:00:00Z",
+          "updated_at": "2026-11-15T10:00:00Z",
+          "members": [
+            {
+              "user": {
+                "id": "00000000-0000-4000-8000-000000000001",
+                "email": "ana@example.com",
+                "name": "Ana Lopez"
+              },
+              "is_owner": true,
+              "joined_at": "2026-11-15T10:00:00Z"
+            },
+            {
+              "user": {
+                "id": "00000000-0000-4000-8000-000000000007",
+                "email": "ben@example.com",
+                "name": "Ben Carter"
+              },
+              "is_owner": false,
+              "joined_at": "2026-11-15T10:00:01Z"
+            },
+            {
+              "user": {
+                "id": "00000000-0000-4000-8000-000000000009",
+                "email": "cy@example.com",
+                "name": "Cy Dunn"
+              },
+              "is_owner": false,
+              "joined_at": "2026-11-15T10:00:02Z"
+            }
+          ]
+        }
+      },
+      "set_cookie": []
+    },
+    "error": {
+      "status": 404,
+      "body": {
+        "error": {
+          "code": "NOT_FOUND",
+          "message": "Resource not found.",
+          "details": [],
+          "request_id": "00000000-0000-4000-8000-000000000010"
+        }
+      },
+      "set_cookie": []
+    }
+  },
+  "GET /api/v1/projects/{project_id}/activity": {
+    "request": {
+      "method": "GET",
+      "path": "/api/v1/projects/00000000-0000-4000-8000-000000000005/activity?limit=3",
+      "body": null,
+      "authenticated": true,
+      "csrf": false
+    },
+    "success": {
+      "status": 200,
+      "body": {
+        "data": [
+          {
+            "id": "00000000-0000-4000-8000-000000000021",
+            "user": {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "email": "ana@example.com",
+              "name": "Ana Lopez"
+            },
+            "project_id": "00000000-0000-4000-8000-000000000005",
+            "task_id": "00000000-0000-4000-8000-000000000020",
+            "action": "task.deleted",
+            "metadata": {
+              "title": "Throwaway idea",
+              "status": "todo"
+            },
+            "created_at": "2026-11-15T10:00:07Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000022",
+            "user": {
+              "id": "00000000-0000-4000-8000-000000000009",
+              "email": "cy@example.com",
+              "name": "Cy Dunn"
+            },
+            "project_id": "00000000-0000-4000-8000-000000000005",
+            "task_id": "00000000-0000-4000-8000-000000000014",
+            "action": "task.status_changed",
+            "metadata": {
+              "to": "completed",
+              "from": "in_progress",
+              "position": 1024.0
+            },
+            "created_at": "2026-11-15T10:00:08Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000023",
+            "user": {
+              "id": "00000000-0000-4000-8000-000000000007",
+              "email": "ben@example.com",
+              "name": "Ben Carter"
+            },
+            "project_id": "00000000-0000-4000-8000-000000000005",
+            "task_id": "00000000-0000-4000-8000-000000000014",
+            "action": "task.status_changed",
+            "metadata": {
+              "to": "in_progress",
+              "from": "todo",
+              "position": 2048.0
+            },
+            "created_at": "2026-11-15T10:00:06Z"
+          }
+        ],
+        "meta": {
+          "page": 1,
+          "page_size": 3,
+          "total": 12,
+          "total_pages": 4
+        }
+      },
+      "set_cookie": []
+    },
+    "error": {
+      "status": 404,
+      "body": {
+        "error": {
+          "code": "NOT_FOUND",
+          "message": "Resource not found.",
+          "details": [],
+          "request_id": "00000000-0000-4000-8000-000000000032"
+        }
+      },
+      "set_cookie": []
+    }
+  },
+  "GET /api/v1/projects/{project_id}/members": {
+    "request": {
+      "method": "GET",
+      "path": "/api/v1/projects/00000000-0000-4000-8000-000000000005/members",
+      "body": null,
+      "authenticated": true,
+      "csrf": false
+    },
+    "success": {
+      "status": 200,
+      "body": {
+        "data": [
+          {
+            "user": {
+              "id": "00000000-0000-4000-8000-000000000001",
+              "email": "ana@example.com",
+              "name": "Ana Lopez"
+            },
+            "is_owner": true,
+            "joined_at": "2026-11-15T10:00:00Z"
+          },
+          {
+            "user": {
+              "id": "00000000-0000-4000-8000-000000000007",
+              "email": "ben@example.com",
+              "name": "Ben Carter"
+            },
+            "is_owner": false,
+            "joined_at": "2026-11-15T10:00:01Z"
+          },
+          {
+            "user": {
+              "id": "00000000-0000-4000-8000-000000000009",
+              "email": "cy@example.com",
+              "name": "Cy Dunn"
+            },
+            "is_owner": false,
+            "joined_at": "2026-11-15T10:00:02Z"
+          }
+        ]
+      },
+      "set_cookie": []
+    }
+  },
+  "GET /api/v1/projects/{project_id}/tasks": {
+    "request": {
+      "method": "GET",
+      "path": "/api/v1/projects/00000000-0000-4000-8000-000000000005/tasks?priority=high&sort=due_date&limit=5",
+      "body": null,
+      "authenticated": true,
+      "csrf": false
+    },
+    "success": {
+      "status": 200,
+      "body": {
+        "data": [
+          {
+            "id": "00000000-0000-4000-8000-000000000014",
+            "project_id": "00000000-0000-4000-8000-000000000005",
+            "title": "Design login page",
+            "description": "Wireframes and copy",
+            "status": "todo",
+            "priority": "high",
+            "assignee": {
+              "id": "00000000-0000-4000-8000-000000000009",
+              "email": "cy@example.com",
+              "name": "Cy Dunn"
+            },
+            "creator": {
+              "id": "00000000-0000-4000-8000-000000000007",
+              "email": "ben@example.com",
+              "name": "Ben Carter"
+            },
+            "due_date": "2099-12-31",
+            "position": 1024.0,
+            "completed_at": null,
+            "allowed_actions": [
+              "update",
+              "complete"
+            ],
+            "created_at": "2026-11-15T10:00:04Z",
+            "updated_at": "2026-11-15T10:00:04Z"
+          }
+        ],
+        "meta": {
+          "page": 1,
+          "page_size": 5,
+          "total": 1,
+          "total_pages": 1
+        }
+      },
+      "set_cookie": []
+    }
+  },
+  "GET /api/v1/tasks/{task_id}": {
+    "request": {
+      "method": "GET",
+      "path": "/api/v1/tasks/00000000-0000-4000-8000-000000000014",
+      "body": null,
+      "authenticated": true,
+      "csrf": false
+    },
+    "success": {
+      "status": 200,
+      "body": {
+        "data": {
+          "id": "00000000-0000-4000-8000-000000000014",
+          "project_id": "00000000-0000-4000-8000-000000000005",
+          "title": "Design login page",
+          "description": "Wireframes and copy",
+          "status": "todo",
+          "priority": "high",
+          "assignee": {
+            "id": "00000000-0000-4000-8000-000000000009",
+            "email": "cy@example.com",
+            "name": "Cy Dunn"
+          },
+          "creator": {
+            "id": "00000000-0000-4000-8000-000000000007",
+            "email": "ben@example.com",
+            "name": "Ben Carter"
+          },
+          "due_date": "2099-12-31",
+          "position": 1024.0,
+          "completed_at": null,
+          "allowed_actions": [
+            "update",
+            "complete"
+          ],
+          "created_at": "2026-11-15T10:00:04Z",
+          "updated_at": "2026-11-15T10:00:04Z"
+        }
+      },
+      "set_cookie": []
+    },
+    "error": {
+      "status": 404,
+      "body": {
+        "error": {
+          "code": "NOT_FOUND",
+          "message": "Resource not found.",
+          "details": [],
+          "request_id": "00000000-0000-4000-8000-000000000015"
+        }
+      },
+      "set_cookie": []
+    }
+  },
+  "PATCH /api/v1/projects/{project_id}": {
+    "request": {
+      "method": "PATCH",
+      "path": "/api/v1/projects/00000000-0000-4000-8000-000000000005",
+      "body": {
+        "description": "Q4 launch of the new marketing site"
+      },
+      "authenticated": true,
+      "csrf": true
+    },
+    "error": {
+      "status": 403,
+      "body": {
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "Only the project owner can update a project.",
+          "details": [
+            {
+              "field": null,
+              "message": "Only the project owner can update a project.",
+              "policy_id": "project-update"
+            }
+          ],
+          "request_id": "00000000-0000-4000-8000-000000000011"
+        }
+      },
+      "set_cookie": []
+    },
+    "success": {
+      "status": 200,
+      "body": {
+        "data": {
+          "id": "00000000-0000-4000-8000-000000000005",
+          "name": "Website redesign",
+          "description": "Q4 launch of the new marketing site",
+          "status": "active",
+          "owner": {
+            "id": "00000000-0000-4000-8000-000000000001",
+            "email": "ana@example.com",
+            "name": "Ana Lopez"
+          },
+          "member_count": 3,
+          "task_counts": {
+            "todo": 0,
+            "in_progress": 0,
+            "completed": 0
+          },
+          "allowed_actions": [
+            "update",
+            "delete",
+            "manage_members",
+            "create_task"
+          ],
+          "created_at": "2026-11-15T10:00:00Z",
+          "updated_at": "2026-11-15T10:00:03Z",
+          "members": [
+            {
+              "user": {
+                "id": "00000000-0000-4000-8000-000000000001",
+                "email": "ana@example.com",
+                "name": "Ana Lopez"
+              },
+              "is_owner": true,
+              "joined_at": "2026-11-15T10:00:00Z"
+            },
+            {
+              "user": {
+                "id": "00000000-0000-4000-8000-000000000007",
+                "email": "ben@example.com",
+                "name": "Ben Carter"
+              },
+              "is_owner": false,
+              "joined_at": "2026-11-15T10:00:01Z"
+            },
+            {
+              "user": {
+                "id": "00000000-0000-4000-8000-000000000009",
+                "email": "cy@example.com",
+                "name": "Cy Dunn"
+              },
+              "is_owner": false,
+              "joined_at": "2026-11-15T10:00:02Z"
+            }
+          ]
+        }
+      },
+      "set_cookie": []
+    }
+  },
+  "PATCH /api/v1/tasks/{task_id}": {
+    "request": {
+      "method": "PATCH",
+      "path": "/api/v1/tasks/00000000-0000-4000-8000-000000000014",
+      "body": {
+        "priority": "medium",
+        "due_date": "2099-06-30"
+      },
+      "authenticated": true,
+      "csrf": true
+    },
+    "error": {
+      "status": 403,
+      "body": {
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "Only the task creator or the task assignee can update a task.",
+          "details": [
+            {
+              "field": null,
+              "message": "Only the task creator or the task assignee can update a task.",
+              "policy_id": "task-update"
+            }
+          ],
+          "request_id": "00000000-0000-4000-8000-000000000016"
+        }
+      },
+      "set_cookie": []
+    },
+    "success": {
+      "status": 200,
+      "body": {
+        "data": {
+          "id": "00000000-0000-4000-8000-000000000014",
+          "project_id": "00000000-0000-4000-8000-000000000005",
+          "title": "Design login page",
+          "description": "Wireframes and copy",
+          "status": "todo",
+          "priority": "medium",
+          "assignee": {
+            "id": "00000000-0000-4000-8000-000000000009",
+            "email": "cy@example.com",
+            "name": "Cy Dunn"
+          },
+          "creator": {
+            "id": "00000000-0000-4000-8000-000000000007",
+            "email": "ben@example.com",
+            "name": "Ben Carter"
+          },
+          "due_date": "2099-06-30",
+          "position": 1024.0,
+          "completed_at": null,
+          "allowed_actions": [
+            "update",
+            "complete"
+          ],
+          "created_at": "2026-11-15T10:00:04Z",
+          "updated_at": "2026-11-15T10:00:05Z"
+        }
+      },
+      "set_cookie": []
+    }
+  },
+  "PATCH /api/v1/tasks/{task_id}/status": {
+    "request": {
+      "method": "PATCH",
+      "path": "/api/v1/tasks/00000000-0000-4000-8000-000000000014/status",
+      "body": {
+        "status": "in_progress"
+      },
+      "authenticated": true,
+      "csrf": true
+    },
+    "error": {
+      "status": 422,
+      "body": {
+        "error": {
+          "code": "BUSINESS_RULE_VIOLATION",
+          "message": "A task cannot move from todo to completed. Allowed from todo: in_progress.",
+          "details": [],
+          "request_id": "00000000-0000-4000-8000-000000000017"
+        }
+      },
+      "set_cookie": []
+    },
+    "success": {
+      "status": 200,
+      "body": {
+        "data": {
+          "id": "00000000-0000-4000-8000-000000000014",
+          "project_id": "00000000-0000-4000-8000-000000000005",
+          "title": "Design login page",
+          "description": "Wireframes and copy",
+          "status": "in_progress",
+          "priority": "medium",
+          "assignee": {
+            "id": "00000000-0000-4000-8000-000000000009",
+            "email": "cy@example.com",
+            "name": "Cy Dunn"
+          },
+          "creator": {
+            "id": "00000000-0000-4000-8000-000000000007",
+            "email": "ben@example.com",
+            "name": "Ben Carter"
+          },
+          "due_date": "2099-06-30",
+          "position": 2048.0,
+          "completed_at": null,
+          "allowed_actions": [
+            "update",
+            "complete"
+          ],
+          "created_at": "2026-11-15T10:00:04Z",
+          "updated_at": "2026-11-15T10:00:06Z"
+        }
+      },
+      "set_cookie": []
+    }
+  },
+  "POST /api/v1/auth/login": {
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "body": {
+        "email": "ana@example.com",
+        "password": "correct-horse-battery"
+      },
+      "authenticated": false,
+      "csrf": false
+    },
+    "success": {
+      "status": 200,
+      "body": {
+        "data": {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "email": "ana@example.com",
+          "name": "Ana Lopez"
+        }
+      },
+      "set_cookie": [
+        "Set-Cookie: access_token=<access-token-jwt>; HttpOnly; Max-Age=900; Path=/; SameSite=lax",
+        "Set-Cookie: refresh_token=<refresh-token-jwt>; HttpOnly; Max-Age=604800; Path=/api/v1/auth; SameSite=lax",
+        "Set-Cookie: csrf_token=<csrf-token>; Max-Age=604800; Path=/; SameSite=lax"
+      ]
+    },
+    "error": {
+      "status": 401,
+      "body": {
+        "error": {
+          "code": "UNAUTHENTICATED",
+          "message": "Invalid email or password.",
+          "details": [],
+          "request_id": "00000000-0000-4000-8000-000000000003"
+        }
+      },
+      "set_cookie": []
+    }
+  },
+  "POST /api/v1/auth/logout": {
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "body": null,
+      "authenticated": true,
+      "csrf": true
+    },
+    "success": {
+      "status": 204,
+      "body": null,
+      "set_cookie": [
+        "Set-Cookie: access_token=; HttpOnly; Max-Age=0; Path=/; SameSite=lax",
+        "Set-Cookie: refresh_token=; HttpOnly; Max-Age=0; Path=/api/v1/auth; SameSite=lax",
+        "Set-Cookie: csrf_token=; Max-Age=0; Path=/; SameSite=lax"
+      ]
+    }
+  },
+  "POST /api/v1/auth/refresh": {
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/auth/refresh",
+      "body": null,
+      "authenticated": true,
+      "csrf": true
+    },
+    "success": {
+      "status": 200,
+      "body": {
+        "data": {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "email": "ana@example.com",
+          "name": "Ana Lopez"
+        }
+      },
+      "set_cookie": [
+        "Set-Cookie: access_token=<access-token-jwt>; HttpOnly; Max-Age=900; Path=/; SameSite=lax",
+        "Set-Cookie: refresh_token=<refresh-token-jwt>; HttpOnly; Max-Age=604800; Path=/api/v1/auth; SameSite=lax",
+        "Set-Cookie: csrf_token=<csrf-token>; Max-Age=604800; Path=/; SameSite=lax"
+      ]
+    },
+    "error": {
+      "status": 401,
+      "body": {
+        "error": {
+          "code": "UNAUTHENTICATED",
+          "message": "Your session is no longer valid. Please log in again.",
+          "details": [],
+          "request_id": "00000000-0000-4000-8000-000000000004"
+        }
+      },
+      "set_cookie": [
+        "Set-Cookie: access_token=; HttpOnly; Max-Age=0; Path=/; SameSite=lax",
+        "Set-Cookie: refresh_token=; HttpOnly; Max-Age=0; Path=/api/v1/auth; SameSite=lax",
+        "Set-Cookie: csrf_token=; Max-Age=0; Path=/; SameSite=lax"
+      ]
+    }
+  },
+  "POST /api/v1/auth/register": {
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/auth/register",
+      "body": {
+        "name": "Ana Lopez",
+        "email": "ana@example.com",
+        "password": "correct-horse-battery"
+      },
+      "authenticated": false,
+      "csrf": false
+    },
+    "success": {
+      "status": 201,
+      "body": {
+        "data": {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "email": "ana@example.com",
+          "name": "Ana Lopez"
+        }
+      },
+      "set_cookie": [
+        "Set-Cookie: access_token=<access-token-jwt>; HttpOnly; Max-Age=900; Path=/; SameSite=lax",
+        "Set-Cookie: refresh_token=<refresh-token-jwt>; HttpOnly; Max-Age=604800; Path=/api/v1/auth; SameSite=lax",
+        "Set-Cookie: csrf_token=<csrf-token>; Max-Age=604800; Path=/; SameSite=lax"
+      ]
+    },
+    "error": {
+      "status": 409,
+      "body": {
+        "error": {
+          "code": "CONFLICT",
+          "message": "An account with this email already exists.",
+          "details": [],
+          "request_id": "00000000-0000-4000-8000-000000000002"
+        }
+      },
+      "set_cookie": []
+    }
+  },
+  "POST /api/v1/projects": {
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/projects",
+      "body": {
+        "name": "Website redesign",
+        "description": "Q4 launch"
+      },
+      "authenticated": true,
+      "csrf": true
+    },
+    "success": {
+      "status": 201,
+      "body": {
+        "data": {
+          "id": "00000000-0000-4000-8000-000000000005",
+          "name": "Website redesign",
+          "description": "Q4 launch",
+          "status": "active",
+          "owner": {
+            "id": "00000000-0000-4000-8000-000000000001",
+            "email": "ana@example.com",
+            "name": "Ana Lopez"
+          },
+          "member_count": 1,
+          "task_counts": {
+            "todo": 0,
+            "in_progress": 0,
+            "completed": 0
+          },
+          "allowed_actions": [
+            "update",
+            "delete",
+            "manage_members",
+            "create_task"
+          ],
+          "created_at": "2026-11-15T10:00:00Z",
+          "updated_at": "2026-11-15T10:00:00Z",
+          "members": [
+            {
+              "user": {
+                "id": "00000000-0000-4000-8000-000000000001",
+                "email": "ana@example.com",
+                "name": "Ana Lopez"
+              },
+              "is_owner": true,
+              "joined_at": "2026-11-15T10:00:00Z"
+            }
+          ]
+        }
+      },
+      "set_cookie": []
+    },
+    "error": {
+      "status": 422,
+      "body": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Request validation failed.",
+          "details": [
+            {
+              "field": "name",
+              "message": "String should have at least 1 character",
+              "policy_id": null
+            }
+          ],
+          "request_id": "00000000-0000-4000-8000-000000000006"
+        }
+      },
+      "set_cookie": []
+    }
+  },
+  "POST /api/v1/projects/{project_id}/members": {
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/projects/00000000-0000-4000-8000-000000000005/members",
+      "body": {
+        "email": "ben@example.com"
+      },
+      "authenticated": true,
+      "csrf": true
+    },
+    "success": {
+      "status": 201,
+      "body": {
+        "data": {
+          "user": {
+            "id": "00000000-0000-4000-8000-000000000007",
+            "email": "ben@example.com",
+            "name": "Ben Carter"
+          },
+          "is_owner": false,
+          "joined_at": "2026-11-15T10:00:01Z"
+        }
+      },
+      "set_cookie": []
+    },
+    "error": {
+      "status": 409,
+      "body": {
+        "error": {
+          "code": "CONFLICT",
+          "message": "This user is already a member of the project.",
+          "details": [],
+          "request_id": "00000000-0000-4000-8000-000000000008"
+        }
+      },
+      "set_cookie": []
+    }
+  },
+  "POST /api/v1/projects/{project_id}/tasks": {
+    "request": {
+      "method": "POST",
+      "path": "/api/v1/projects/00000000-0000-4000-8000-000000000005/tasks",
+      "body": {
+        "title": "Design login page",
+        "description": "Wireframes and copy",
+        "priority": "high",
+        "due_date": "2099-12-31",
+        "assignee_id": "00000000-0000-4000-8000-000000000009"
+      },
+      "authenticated": true,
+      "csrf": true
+    },
+    "error": {
+      "status": 422,
+      "body": {
+        "error": {
+          "code": "BUSINESS_RULE_VIOLATION",
+          "message": "The assignee must be a member of the project.",
+          "details": [],
+          "request_id": "00000000-0000-4000-8000-000000000013"
+        }
+      },
+      "set_cookie": []
+    },
+    "success": {
+      "status": 201,
+      "body": {
+        "data": {
+          "id": "00000000-0000-4000-8000-000000000014",
+          "project_id": "00000000-0000-4000-8000-000000000005",
+          "title": "Design login page",
+          "description": "Wireframes and copy",
+          "status": "todo",
+          "priority": "high",
+          "assignee": {
+            "id": "00000000-0000-4000-8000-000000000009",
+            "email": "cy@example.com",
+            "name": "Cy Dunn"
+          },
+          "creator": {
+            "id": "00000000-0000-4000-8000-000000000007",
+            "email": "ben@example.com",
+            "name": "Ben Carter"
+          },
+          "due_date": "2099-12-31",
+          "position": 1024.0,
+          "completed_at": null,
+          "allowed_actions": [
+            "update",
+            "complete"
+          ],
+          "created_at": "2026-11-15T10:00:04Z",
+          "updated_at": "2026-11-15T10:00:04Z"
+        }
+      },
+      "set_cookie": []
+    }
+  }
+}

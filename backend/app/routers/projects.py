@@ -10,7 +10,14 @@ from app.models import ProjectStatus
 from app.repositories.project_member_repository import MemberRow
 from app.routers.dependencies import ProjectServiceDep
 from app.schemas.auth import UserOut
-from app.schemas.common import Envelope, ErrorResponse, PagedEnvelope, PageMeta, PaginationDep
+from app.schemas.common import (
+    Envelope,
+    ErrorResponse,
+    NoNul,
+    PagedEnvelope,
+    PageMeta,
+    PaginationDep,
+)
 from app.schemas.project import (
     MemberOut,
     ProjectCreate,
@@ -90,7 +97,7 @@ def list_projects(
     service: ProjectServiceDep,
     pagination: PaginationDep,
     q: Annotated[
-        str | None, Query(max_length=100, description="Name contains (case-insensitive)")
+        str | None, Query(max_length=100, description="Name contains (case-insensitive)"), NoNul
     ] = None,
     status_filter: Annotated[ProjectStatus | None, Query(alias="status")] = None,
 ) -> PagedEnvelope[ProjectOut]:

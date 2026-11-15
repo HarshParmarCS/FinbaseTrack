@@ -65,7 +65,7 @@ Notes:
 - **Completion is checked on the resulting state.** Any write whose resulting status is `completed` (create or update) must satisfy both the base action and `task.complete`, evaluated against the task as it would be after the write. This makes "clear the due date of a completed task" a denied update.
 - **"Has an assignee"** means the resulting assignee is set AND is currently a member of the task's project.
 - **Required completion fields:** `title`, `description`, `priority`, `due_date`, `assignee`. A text field counts as complete only if it is not blank. They are configured in `policies.json`.
-- **Data scoping, not policy:** list and aggregate endpoints (project list, dashboard) filter by membership in the query. A non-member's data never appears.
+- **Data scoping, not policy:** list and aggregate endpoints (project list, dashboard, personal activity feed) filter by membership in the query. A non-member's data never appears.
 
 ## 5. Policy file format (`policies.json`)
 

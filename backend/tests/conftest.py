@@ -7,6 +7,7 @@ engine always point at the test database.
 import os
 from collections.abc import Iterator
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 from alembic import command
@@ -16,6 +17,9 @@ from sqlalchemy import Engine, create_engine, make_url
 from sqlalchemy.orm import Session
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
+
+if TYPE_CHECKING:
+    from tests.projects.helpers import Actor
 
 
 def _test_database_url() -> str:
@@ -123,3 +127,50 @@ def _clear_caches() -> Iterator[None]:
     yield
     get_settings.cache_clear()
     get_session_factory.cache_clear()
+
+
+# ---- shared API-test actors (each has their own logged-in client) --------------------------------
+
+
+@pytest.fixture
+def ana(app: FastAPI, db_session: Session) -> "Actor":
+    from tests.projects.helpers import Actor
+
+    return Actor(app, db_session, "Ana")
+
+
+@pytest.fixture
+def ben(app: FastAPI, db_session: Session) -> "Actor":
+    from tests.projects.helpers import Actor
+
+    return Actor(app, db_session, "Ben")
+
+
+@pytest.fixture
+def cy(app: FastAPI, db_session: Session) -> "Actor":
+    from tests.projects.helpers import Actor
+
+    return Actor(app, db_session, "Cy")
+
+
+@pytest.fixture
+def dan(app: FastAPI, db_session: Session) -> "Actor":
+    from tests.projects.helpers import Actor
+
+    return Actor(app, db_session, "Dan")
+
+
+@pytest.fixture
+def fast_password_hashing(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Cheap Argon2 parameters, for API tests that only need users to exist.
+
+    Test-only speed-up (hashing dominates their run time). The auth tests do NOT use this: they
+    verify the real production parameters.
+    """
+    from argon2 import PasswordHasher
+
+    from app.auth import passwords
+
+    monkeypatch.setattr(
+        passwords, "_hasher", PasswordHasher(time_cost=1, memory_cost=8, parallelism=1)
+    )

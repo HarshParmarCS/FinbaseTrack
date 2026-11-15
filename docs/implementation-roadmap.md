@@ -26,7 +26,7 @@ Status legend: `[x]` done, `[ ]` not started.
 - Commit: `feat(db): add relational schema models and initial migration`.
 
 ### M2: Users and authentication [x]
-- Also: CSRF protection (Origin check and double-submit token) and CORS (moved from M1). Auth events are logged to the application log; `activity_logs` rows for auth events arrive with M7.
+- Also: CSRF protection (Origin check and double-submit token) and CORS (moved from M1). Auth events are also written to `activity_logs` (M7).
 - Argon2 hashing, PyJWT access tokens, cookies, `get_current_user`.
 - Endpoints: register, login, logout, me.
 - Tests: duplicate email 409, generic login failure, expired and tampered token 401, cookie flags, logout clears cookies, password never returned or logged.
@@ -52,14 +52,14 @@ Status legend: `[x]` done, `[ ]` not started.
 - Acceptance: the project policy rows of the matrix pass at API level.
 - Commit: `feat(projects): add project and member management APIs`.
 
-### M6: Tasks [ ]
+### M6: Tasks [x]
 - Endpoints 15 to 19: CRUD, search, filters, sorting, pagination, `position`, `completed_at`.
 - Assignee must be a member (422). Member removal unassigns tasks (integrates with M5).
 - Tests: all task rows of the matrix, completion rules (create and update, clearing a field on a completed task), filters, search, pagination, sorting, assignee validation, unassign on removal, task counts in `ProjectOut`.
 - Acceptance: the task policy rows of the matrix pass at API level.
 - Commit: `feat(tasks): add task APIs with filters, pagination and completion rules`.
 
-### M7: Audit log, activity and dashboard [ ]
+### M7: Audit log, activity and dashboard [x]
 - Activity read side: endpoints 20 to 22. Project and member mutations already write activity rows (M5) and task mutations do from M6; this milestone adds the auth events and the dashboard.
 - Tests: statistics against known fixtures (including overdue and assigned-to-me), activity scoped by membership, audit rows written for each mutation, no secrets in metadata.
 - Acceptance: the dashboard payload matches the contract.

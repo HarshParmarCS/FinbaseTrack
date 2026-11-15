@@ -12,6 +12,8 @@ from pydantic import (
     StringConstraints,
 )
 
+from app.schemas.common import NoNul
+
 
 def _normalize_email(value: str) -> str:
     """Single place where emails are normalized: trimmed and lowercase (matches the DB check)."""
@@ -28,7 +30,9 @@ class _StrictModel(BaseModel):
 
 
 class RegisterIn(_StrictModel):
-    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+    name: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120), NoNul
+    ]
     email: NormalizedEmail = Field(max_length=255)
     password: Annotated[str, StringConstraints(min_length=8, max_length=128)]
 

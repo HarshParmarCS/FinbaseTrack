@@ -3,7 +3,7 @@
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import Select, delete, func, select
+from sqlalchemy import ScalarSelect, Select, delete, func, select
 from sqlalchemy.orm import Session
 
 from app.models import Project, ProjectMember, ProjectStatus, Task, TaskStatus, User
@@ -31,7 +31,7 @@ def _escape_like(text: str) -> str:
     return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
-def _task_count(status: TaskStatus):  # type: ignore[no-untyped-def]  # SQLAlchemy scalar subquery
+def _task_count(status: TaskStatus) -> ScalarSelect[int]:
     return (
         select(func.count())
         .select_from(Task)

@@ -14,10 +14,13 @@ from pydantic import (
 
 from app.models import ProjectStatus
 from app.schemas.auth import NormalizedEmail, UserOut
+from app.schemas.common import NoNul
 
 ProjectAction = Literal["update", "delete", "manage_members", "create_task"]
 
-ProjectName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
+ProjectName = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120), NoNul
+]
 
 
 def _blank_to_none(value: str | None) -> str | None:
@@ -25,7 +28,7 @@ def _blank_to_none(value: str | None) -> str | None:
 
 
 Description = Annotated[
-    str | None, StringConstraints(max_length=5000), AfterValidator(_blank_to_none)
+    str | None, StringConstraints(max_length=5000), NoNul, AfterValidator(_blank_to_none)
 ]
 
 

@@ -23,7 +23,9 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     name: Mapped[str] = mapped_column(String(120))
     email: Mapped[str] = mapped_column(String(255))
-    password_hash: Mapped[str] = mapped_column(String(255))
+    # deferred: never loaded by ordinary queries (task/project/member lists, current user);
+    # only the login code asks for it explicitly.
+    password_hash: Mapped[str] = mapped_column(String(255), deferred=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
 
     owned_projects: Mapped[list["Project"]] = relationship(

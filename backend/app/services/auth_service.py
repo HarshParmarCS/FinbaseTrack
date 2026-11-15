@@ -28,6 +28,8 @@ from app.auth.tokens import (
 from app.core.clock import utcnow
 from app.core.exceptions import ConflictError, SessionInvalidError, UnauthenticatedError
 from app.models import RefreshToken, User
+from app.models.enums import ActivityAction
+from app.repositories.activity_repository import ActivityRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.user_repository import UserRepository
 
@@ -47,11 +49,16 @@ class AuthResult:
 
 class AuthService:
     def __init__(
-        self, db: Session, users: UserRepository, refresh_tokens: RefreshTokenRepository
+        self,
+        db: Session,
+        users: UserRepository,
+        refresh_tokens: RefreshTokenRepository,
+        activity: ActivityRepository,
     ) -> None:
         self.db = db
         self.users = users
         self.refresh_tokens = refresh_tokens
+        self.activity = activity
 
     # ---- register / login ------------------------------------------------------------------
 
@@ -64,6 +71,7 @@ class AuthService:
         try:
             self.users.add(user)
             result, _ = self._issue_tokens(user, family_id=uuid.uuid4())
+            self.activity.record(user_id=user.id, action=ActivityAction.USER_REGISTERED)
             self.db.commit()
         except IntegrityError as exc:
             self.db.rollback()
@@ -91,6 +99,7 @@ class AuthService:
             user.password_hash = hash_password(password)
 
         result, _ = self._issue_tokens(user, family_id=uuid.uuid4())
+        self.activity.record(user_id=user.id, action=ActivityAction.AUTH_LOGIN)
         self.db.commit()
         logger.info("User logged in user_id=%s", user.id)
         return result
@@ -117,6 +126,11 @@ class AuthService:
 
         if stored.revoked_at is not None:
             self.refresh_tokens.revoke_family(stored.family_id, now)
+            self.activity.record(
+                user_id=stored.user_id,
+                action=ActivityAction.AUTH_REFRESH_REUSE_DETECTED,
+                meta={"family_id": str(stored.family_id)},
+            )
             self.db.commit()  # persist the revocation BEFORE failing the request
             logger.warning(
                 "Refresh token reuse detected; family revoked user_id=%s family_id=%s",
@@ -149,6 +163,7 @@ class AuthService:
         if stored is None:
             return
         self.refresh_tokens.revoke_family(stored.family_id, utcnow())
+        self.activity.record(user_id=stored.user_id, action=ActivityAction.AUTH_LOGOUT)
         self.db.commit()
         logger.info("User logged out user_id=%s", stored.user_id)
 

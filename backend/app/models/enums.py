@@ -52,9 +52,18 @@ def in_values_check(column: str, enum_class: type[StrEnum]) -> str:
 class ActivityAction(StrEnum):
     """Actions recorded in activity_logs (see docs/database-design.md)."""
 
+    USER_REGISTERED = "user.registered"
+    AUTH_LOGIN = "auth.login"
+    AUTH_LOGOUT = "auth.logout"
+    AUTH_REFRESH_REUSE_DETECTED = "auth.refresh_reuse_detected"
     PROJECT_CREATED = "project.created"
     PROJECT_UPDATED = "project.updated"
     PROJECT_DELETED = "project.deleted"
     MEMBER_ADDED = "member.added"
     MEMBER_REMOVED = "member.removed"
+    TASK_CREATED = "task.created"
+    TASK_UPDATED = "task.updated"
+    TASK_STATUS_CHANGED = "task.status_changed"
+    TASK_ASSIGNED = "task.assigned"
     TASK_UNASSIGNED = "task.unassigned"
+    TASK_DELETED = "task.deleted"

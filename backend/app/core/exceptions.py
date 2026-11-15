@@ -12,6 +12,7 @@ from typing import Any
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import DataError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.config import get_settings
@@ -144,6 +145,24 @@ async def handle_validation_error(request: Request, exc: Exception) -> JSONRespo
     )
 
 
+async def handle_data_error(request: Request, exc: Exception) -> JSONResponse:
+    """The database rejected a value (bad text, out of range). A client error, never a 500.
+
+    Defense in depth behind request validation. Only the database's one-line reason is logged:
+    never the SQL parameters.
+    """
+    assert isinstance(exc, DataError)
+    reason = str(exc.orig).splitlines()[0] if exc.orig else "data error"
+    logger.warning(
+        "Database rejected a value on %s %s: %s", request.method, request.url.path, reason
+    )
+    return error_response(
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+        "VALIDATION_ERROR",
+        "A value in the request cannot be stored.",
+    )
+
+
 async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
     """Last resort: log the traceback, return a generic message (no internals)."""
     logger.error("Unhandled exception on %s %s", request.method, request.url.path, exc_info=exc)
@@ -158,4 +177,5 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(AppError, handle_app_error)
     app.add_exception_handler(StarletteHTTPException, handle_http_exception)
     app.add_exception_handler(RequestValidationError, handle_validation_error)
+    app.add_exception_handler(DataError, handle_data_error)
     app.add_exception_handler(Exception, handle_unexpected_error)

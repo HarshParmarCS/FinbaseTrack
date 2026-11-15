@@ -21,6 +21,9 @@ def get_engine() -> Engine:
         max_overflow=settings.db_max_overflow,
         pool_pre_ping=True,
         echo=settings.db_echo,
+        # Error messages and logs must never contain bound values: they are user content and,
+        # for a failed user insert, a password hash.
+        hide_parameters=True,
     )
 
 

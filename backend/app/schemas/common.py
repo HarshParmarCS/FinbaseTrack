@@ -4,7 +4,18 @@ import math
 from typing import Annotated
 
 from fastapi import Depends, Query
-from pydantic import BaseModel
+from fastapi.exceptions import RequestValidationError
+from pydantic import AfterValidator, BaseModel
+
+
+def reject_nul(value: str | None) -> str | None:
+    """PostgreSQL text cannot store NUL (0x00): reject it as a validation error, not a 500."""
+    if value is not None and "\x00" in value:
+        raise ValueError("must not contain NUL characters")
+    return value
+
+
+NoNul = AfterValidator(reject_nul)
 
 
 class ErrorDetail(BaseModel):
@@ -34,6 +45,9 @@ class Envelope[T](BaseModel):
     data: T
 
 
+MAX_PAGE = 100_000  # keeps OFFSET far below the database's integer range
+
+
 class PageMeta(BaseModel):
     page: int
     page_size: int
@@ -55,15 +69,33 @@ class PagedEnvelope[T](BaseModel):
 
 
 class Pagination:
-    """Query parameters shared by every list endpoint (``page`` from 1, ``page_size`` 1 to 100)."""
+    """Query parameters shared by every list endpoint.
+
+    ``page`` starts at 1. ``page_size`` is 1 to 100 (default 20). ``limit`` is an alias of
+    ``page_size``; if both are sent they must agree.
+    """
+
+    DEFAULT_PAGE_SIZE = 20
 
     def __init__(
         self,
-        page: Annotated[int, Query(ge=1)] = 1,
-        page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+        page: Annotated[int, Query(ge=1, le=MAX_PAGE)] = 1,
+        page_size: Annotated[int | None, Query(ge=1, le=100)] = None,
+        limit: Annotated[int | None, Query(ge=1, le=100, description="Alias of page_size")] = None,
     ) -> None:
+        if page_size is not None and limit is not None and page_size != limit:
+            raise RequestValidationError(
+                [
+                    {
+                        "type": "value_error",
+                        "loc": ("query", "limit"),
+                        "msg": "'limit' is an alias of 'page_size'; send one, or the same value",
+                        "input": limit,
+                    }
+                ]
+            )
         self.page = page
-        self.page_size = page_size
+        self.page_size = page_size or limit or self.DEFAULT_PAGE_SIZE
 
     @property
     def offset(self) -> int:
