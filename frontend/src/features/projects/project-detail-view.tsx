@@ -1,7 +1,8 @@
 "use client";
 
-import { ArrowLeft, Compass, ListChecks, Pencil, ShieldAlert, Trash2 } from "lucide-react";
+import { Compass, ListChecks, Pencil, ShieldAlert, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { BackLink } from "@/components/shared/back-link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -22,17 +23,8 @@ import { ProjectActivitySection } from "@/features/activity/project-activity-sec
 import { PROJECT_STATUS_LABELS } from "@/features/projects/status";
 import { getErrorMessage, isApiError } from "@/lib/api/errors";
 import { formatDate } from "@/lib/format";
-import { cn } from "@/lib/utils";
 
-const BACK_LINK = (
-  <Link
-    href="/projects"
-    className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-2 -ml-2")}
-  >
-    <ArrowLeft aria-hidden />
-    All projects
-  </Link>
-);
+const BACK_LINK = <BackLink href={"/projects"}>All projects</BackLink>;
 
 function DetailSkeleton() {
   return (
@@ -111,6 +103,7 @@ export function ProjectDetailView({ projectId }: { projectId: string }) {
       <div>
         {BACK_LINK}
         <PageHeader
+          eyebrow="Project"
           title={data.name}
           description={data.description ?? "No description"}
           actions={

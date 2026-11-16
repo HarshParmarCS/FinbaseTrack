@@ -25,7 +25,7 @@ export function QuickActions() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button>
+          <Button variant="outline" className="border-transparent shadow-glow">
             <Plus aria-hidden />
             New
             <ChevronDown aria-hidden />

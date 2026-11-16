@@ -1,7 +1,8 @@
 "use client";
 
-import { ArrowLeft, ClipboardList, Compass, Plus, SearchX, ShieldAlert } from "lucide-react";
+import { ClipboardList, Compass, Plus, SearchX, ShieldAlert } from "lucide-react";
 import Link from "next/link";
+import { BackLink } from "@/components/shared/back-link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -28,7 +29,6 @@ import { TaskFiltersBar } from "@/features/tasks/task-filters-bar";
 import { TaskFormDialog } from "@/features/tasks/task-form-dialog";
 import { TasksTable } from "@/features/tasks/tasks-table";
 import { getActionErrorMessage, isApiError } from "@/lib/api/errors";
-import { cn } from "@/lib/utils";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import type { TaskOut } from "@/types/api";
 
@@ -70,13 +70,7 @@ export function TasksView({ projectId }: { projectId: string }) {
   const [today] = useState(() => utcToday(new Date()));
 
   const back = (
-    <Link
-      href={`/projects/${projectId}`}
-      className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-2 -ml-2")}
-    >
-      <ArrowLeft aria-hidden />
-      {project.data?.name ?? "Project"}
-    </Link>
+    <BackLink href={`/projects/${projectId}`}>{project.data?.name ?? "Project"}</BackLink>
   );
 
   if (project.isError && !project.data) {
@@ -200,6 +194,7 @@ export function TasksView({ projectId }: { projectId: string }) {
       <div>
         {back}
         <PageHeader
+          eyebrow="Project tasks"
           title="Tasks"
           description={
             tasks.data

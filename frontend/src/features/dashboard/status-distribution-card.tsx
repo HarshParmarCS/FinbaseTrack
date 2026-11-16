@@ -9,9 +9,9 @@ import { distributionFrom } from "@/features/dashboard/distribution";
 import { cn } from "@/lib/utils";
 
 const SEGMENTS = [
-  { key: "todo", label: "To do", color: "bg-slate-300" },
-  { key: "in_progress", label: "In progress", color: "bg-primary" },
-  { key: "completed", label: "Completed", color: "bg-emerald-500" },
+  { key: "todo", label: "To do", color: "bg-status-todo-solid" },
+  { key: "in_progress", label: "In progress", color: "bg-status-in-progress-solid" },
+  { key: "completed", label: "Completed", color: "bg-status-completed-solid" },
 ] as const;
 
 export function StatusDistributionCard() {
@@ -50,7 +50,7 @@ export function StatusDistributionCard() {
         <div
           role="img"
           aria-label={SEGMENTS.map((s) => `${s.label}: ${distribution.counts[s.key]}`).join(", ")}
-          className="flex h-3 overflow-hidden rounded-full bg-muted"
+          className="flex h-3 gap-0.5 overflow-hidden rounded-full bg-muted"
         >
           {SEGMENTS.map((segment) =>
             distribution.counts[segment.key] > 0 ? (

@@ -9,7 +9,27 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ActivityItem } from "@/features/activity/activity-item";
 import { groupByDay, learnFromEntries, type Lookups } from "@/features/activity/describe";
 import { getActionErrorMessage } from "@/lib/api/errors";
+import { cn } from "@/lib/utils";
 import type { ActivityOut, PagedEnvelope } from "@/types/api";
+
+export type EventKind = "project" | "member" | "task" | "removal" | "account";
+
+/** Which family an action belongs to; deletions and removals share the "removal" color. */
+export function eventKind(action: ActivityOut["action"]): EventKind {
+  if (action.endsWith(".deleted") || action === "member.removed") return "removal";
+  if (action.startsWith("project.")) return "project";
+  if (action.startsWith("member.")) return "member";
+  if (action.startsWith("task.")) return "task";
+  return "account";
+}
+
+const DOT_TONE: Record<EventKind, string> = {
+  project: "bg-brand-600",
+  member: "bg-highlight-500",
+  task: "bg-chart-3",
+  removal: "bg-danger",
+  account: "bg-status-todo-solid",
+};
 
 type Feed = {
   data?: { pages: PagedEnvelope<ActivityOut>[] };
@@ -98,12 +118,16 @@ export function ActivityTimeline({
           >
             {group.label}
           </h3>
-          <ol className="relative space-y-4 border-l border-border pl-5">
+          <ol className="relative space-y-5 border-l-2 border-brand-100 pl-5">
             {group.entries.map((entry) => (
               <li key={entry.id} className="relative">
                 <span
                   aria-hidden
-                  className="absolute top-2 -left-[25px] size-2.5 rounded-full border-2 border-border bg-background"
+                  data-kind={eventKind(entry.action)}
+                  className={cn(
+                    "absolute top-2 -left-[26.5px] size-3 rounded-full ring-4 ring-card",
+                    DOT_TONE[eventKind(entry.action)],
+                  )}
                 />
                 <ActivityItem entry={entry} lookups={lookups} now={now} hideProject={hideProject} />
               </li>

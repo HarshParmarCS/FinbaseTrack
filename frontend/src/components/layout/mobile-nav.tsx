@@ -2,10 +2,9 @@
 
 import { Menu } from "lucide-react";
 import { useState } from "react";
-import { Brand } from "@/components/layout/brand";
-import { SidebarNav } from "@/components/layout/sidebar-nav";
+import { SidebarContent } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
@@ -17,12 +16,9 @@ export function MobileNav() {
           <Menu aria-hidden />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-64 gap-6 px-3 py-4">
-        <SheetHeader className="p-0 px-2.5">
-          <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <Brand />
-        </SheetHeader>
-        <SidebarNav onNavigate={() => setOpen(false)} />
+      <SheetContent side="left" className="w-72 gap-0 bg-sidebar p-0">
+        <SheetTitle className="sr-only">Navigation</SheetTitle>
+        <SidebarContent onNavigate={() => setOpen(false)} />
       </SheetContent>
     </Sheet>
   );

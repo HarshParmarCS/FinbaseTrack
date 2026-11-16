@@ -28,6 +28,7 @@ export function ActivityView() {
   return (
     <div className="space-y-6">
       <PageHeader
+        eyebrow="Timeline"
         title="Activity"
         description="Everything that happened in the projects you belong to, newest first. Your own actions are marked “You”."
       />

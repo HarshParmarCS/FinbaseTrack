@@ -11,7 +11,7 @@ export function SidebarNav({ onNavigate }: SidebarNavProps) {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Main" className="flex flex-col gap-0.5">
+    <nav aria-label="Main" className="flex flex-col gap-1">
       {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
         const active = isActivePath(pathname, href);
         return (
@@ -21,13 +21,21 @@ export function SidebarNav({ onNavigate }: SidebarNavProps) {
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
+              "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all outline-none focus-visible:ring-4 focus-visible:ring-brand-200",
               active
-                ? "bg-accent text-foreground"
-                : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+                ? "bg-brand-gradient text-primary-foreground shadow-glow"
+                : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
             )}
           >
-            <Icon className={cn("size-4", active && "text-primary")} aria-hidden />
+            <Icon
+              className={cn(
+                "size-4 transition-colors",
+                active
+                  ? "text-primary-foreground"
+                  : "text-muted-foreground group-hover:text-brand-600",
+              )}
+              aria-hidden
+            />
             {label}
           </Link>
         );

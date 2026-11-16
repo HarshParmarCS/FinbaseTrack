@@ -1,7 +1,7 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AccountMenu } from "@/components/layout/account-menu";
+import { AppShell } from "@/components/layout/app-shell";
 import { AuthGate } from "@/features/auth/auth-gate";
 import { GuestGate } from "@/features/auth/guest-gate";
 import { setSessionExpiredHandler } from "@/lib/api/client";
@@ -136,7 +136,7 @@ describe("GuestGate", () => {
   });
 });
 
-describe("sign out", () => {
+describe("sign out (bottom of the sidebar)", () => {
   async function renderSignedIn() {
     resetNav("/dashboard");
     setCookie("csrf_token", "t");
@@ -146,42 +146,64 @@ describe("sign out", () => {
     const user = userEvent.setup();
     renderWithAuth(
       <AuthGate>
-        <AccountMenu />
+        <AppShell>
+          <p>page</p>
+        </AppShell>
       </AuthGate>,
     );
-    await user.click(await screen.findByRole("button", { name: "Account menu" }));
-    return user;
+    const sidebar = await screen.findByRole("complementary", { name: "Sidebar" });
+    return { user, sidebar };
   }
 
-  it("shows who is signed in", async () => {
-    await renderSignedIn();
+  it("shows who is signed in, in the sidebar, with no account popup anywhere", async () => {
+    const { sidebar } = await renderSignedIn();
 
-    expect(screen.getByText("Ana Lopez")).toBeInTheDocument();
-    expect(screen.getByText("ana@example.com")).toBeInTheDocument();
+    expect(within(sidebar).getByText("Ana Lopez")).toBeInTheDocument();
+    expect(within(sidebar).getByText("ana@example.com")).toBeInTheDocument();
+    expect(within(sidebar).getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Account menu" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
 
-  it("calls the real logout endpoint, then goes to a clean login page", async () => {
-    const user = await renderSignedIn();
+  it("calls the real logout endpoint, confirms with a toast, then goes to a clean login page", async () => {
+    const { user, sidebar } = await renderSignedIn();
 
-    await user.click(screen.getByRole("menuitem", { name: "Sign out" }));
+    await user.click(within(sidebar).getByRole("button", { name: "Sign out" }));
 
     await waitFor(() => expect(nav.replace).toHaveBeenCalledWith("/login"));
     const logoutCall = fetchMock.mock.calls.find(([u]) => String(u).endsWith("/auth/logout"));
     expect(logoutCall?.[1]?.method).toBe("POST");
     expect(new Headers(logoutCall?.[1]?.headers).get("x-csrf-token")).toBe("t");
+    expect(await screen.findByText("You are signed out")).toBeInTheDocument();
   });
 
-  it("stays signed in and says so when logout fails", async () => {
-    const user = await renderSignedIn();
+  it("disables the button while signing out", async () => {
+    const { user, sidebar } = await renderSignedIn();
+    fetchMock.mockImplementation((input) =>
+      String(input).endsWith("/auth/logout")
+        ? new Promise<Response>(() => {})
+        : Promise.resolve(reply(200, { data: ana })),
+    );
+
+    await user.click(within(sidebar).getByRole("button", { name: "Sign out" }));
+
+    expect(await within(sidebar).findByRole("button", { name: "Signing out…" })).toBeDisabled();
+  });
+
+  it("stays signed in and says so next to the button when logout fails", async () => {
+    const { user, sidebar } = await renderSignedIn();
     fetchMock.mockImplementation(async (input) =>
       String(input).endsWith("/auth/logout")
         ? reply(500, errorBody("INTERNAL_ERROR", "boom"))
         : reply(200, { data: ana }),
     );
 
-    await user.click(screen.getByRole("menuitem", { name: "Sign out" }));
+    await user.click(within(sidebar).getByRole("button", { name: "Sign out" }));
 
-    expect(await screen.findByText(/Could not sign out/)).toBeInTheDocument();
+    expect(await within(sidebar).findByRole("alert")).toHaveTextContent(
+      "Could not sign out. Check your connection and try again.",
+    );
     expect(nav.replace).not.toHaveBeenCalled();
+    expect(within(sidebar).getByRole("button", { name: "Sign out" })).toBeEnabled();
   });
 });

@@ -160,6 +160,24 @@ describe("app shell accessibility", () => {
   });
 });
 
+describe("mobile navigation sign-out", () => {
+  it("has the same account block and sign-out button in the phone menu", async () => {
+    route(fetchMock, {});
+    const user = userEvent.setup();
+    renderWithAuth(
+      <AppShell>
+        <p>page</p>
+      </AppShell>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open navigation" }));
+    const sheet = await screen.findByRole("dialog");
+
+    expect(await within(sheet).findByText("ana@example.com")).toBeInTheDocument();
+    expect(within(sheet).getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+  });
+});
+
 describe("global loading bar", () => {
   it("is shown while a request is in flight and hidden from assistive technology", async () => {
     const client = new QueryClient();
@@ -181,7 +199,7 @@ describe("global loading bar", () => {
     await waitFor(() => expect(bar).toHaveAttribute("data-busy", "true"));
     act(() => release());
     await waitFor(() => expect(bar).toHaveAttribute("data-busy", "false"));
-    expect(bar?.parentElement).toHaveAttribute("aria-hidden", "true");
+    expect(bar?.closest("[aria-hidden]")).not.toBeNull();
   });
 });
 

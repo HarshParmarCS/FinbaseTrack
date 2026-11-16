@@ -1,7 +1,7 @@
 # FinTasks: Product Definition
 
 > Source of truth for WHAT we build. Detailed requirement IDs live in `docs/requirements.md`.
-> The product name is **FinTasks** (the repository folder is `FinbaseTrack`).
+> The product name shown to users is **Finbase Workdesk** (renamed from FinTasks; the repository folder is `FinbaseTrack`). Backend and infrastructure identifiers keep `fintasks` (API name, JWT issuer and audiences `fintasks:*`, the `fintasks-db` container and database names): changing them would invalidate sessions and the local database setup.
 
 ## Purpose
 

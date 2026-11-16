@@ -15,7 +15,7 @@ export function AppShell({ children }: AppShellProps) {
       </a>
       <aside
         aria-label="Sidebar"
-        className="sticky top-0 hidden h-svh w-60 shrink-0 border-r bg-sidebar lg:block"
+        className="sticky top-0 hidden h-svh w-64 shrink-0 border-r border-sidebar-border bg-sidebar lg:block"
       >
         <Sidebar />
       </aside>
@@ -24,7 +24,7 @@ export function AppShell({ children }: AppShellProps) {
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 px-4 py-6 outline-none sm:px-6 lg:px-8"
+          className="flex-1 px-4 py-8 outline-none sm:px-6 lg:px-10"
         >
           <div className="mx-auto w-full max-w-6xl">{children}</div>
         </main>

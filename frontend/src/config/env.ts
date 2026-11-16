@@ -17,7 +17,7 @@ const publicSchema = z.object({
 
 export function parsePublicEnv(source: Record<string, string | undefined>) {
   return publicSchema.parse({
-    NEXT_PUBLIC_APP_NAME: source.NEXT_PUBLIC_APP_NAME ?? "FinTasks",
+    NEXT_PUBLIC_APP_NAME: source.NEXT_PUBLIC_APP_NAME ?? "Finbase Workdesk",
     NEXT_PUBLIC_API_BASE_URL: source.NEXT_PUBLIC_API_BASE_URL ?? "",
   });
 }

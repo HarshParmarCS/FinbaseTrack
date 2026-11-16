@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, Mail } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -9,7 +9,8 @@ import { useForm } from "react-hook-form";
 import { FormField, describedBy } from "@/components/shared/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { InputWithIcon } from "@/components/shared/input-with-icon";
+import { PasswordInput } from "@/components/shared/password-input";
 import { AuthCard } from "@/features/auth/auth-card";
 import { applyApiError } from "@/lib/api/form-errors";
 import { useLogin } from "@/features/auth/hooks";
@@ -71,9 +72,11 @@ export function LoginForm() {
         ) : null}
 
         <FormField id="email" label="Email" error={errors.email?.message}>
-          <Input
+          <InputWithIcon
+            icon={Mail}
             id="email"
             type="email"
+            placeholder="name@company.com"
             autoComplete="email"
             aria-invalid={Boolean(errors.email)}
             aria-describedby={describedBy("email", { error: errors.email?.message })}
@@ -81,9 +84,8 @@ export function LoginForm() {
           />
         </FormField>
         <FormField id="password" label="Password" error={errors.password?.message}>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             autoComplete="current-password"
             aria-invalid={Boolean(errors.password)}
             aria-describedby={describedBy("password", { error: errors.password?.message })}
@@ -91,9 +93,13 @@ export function LoginForm() {
           />
         </FormField>
 
-        <Button type="submit" className="w-full" disabled={login.isPending}>
-          {login.isPending ? <Loader2 className="animate-spin" aria-hidden /> : null}
+        <Button type="submit" size="cta" className="w-full" disabled={login.isPending}>
           {login.isPending ? "Signing in…" : "Sign in"}
+          {login.isPending ? (
+            <Loader2 className="animate-spin" aria-hidden />
+          ) : (
+            <ArrowRight aria-hidden />
+          )}
         </Button>
       </form>
     </AuthCard>

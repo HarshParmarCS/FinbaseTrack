@@ -1,8 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { FolderPlus, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { IconTile } from "@/components/shared/icon-tile";
 import { useForm } from "react-hook-form";
 import { FormField, describedBy } from "@/components/shared/form-field";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -73,6 +74,7 @@ export function CreateProjectDialog({ open, onOpenChange, onCreated }: Props) {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
+          <IconTile icon={FolderPlus} className="mb-2" />
           <DialogTitle>New project</DialogTitle>
           <DialogDescription>You become the owner and can add members later.</DialogDescription>
         </DialogHeader>

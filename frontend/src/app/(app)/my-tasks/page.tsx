@@ -10,7 +10,11 @@ export const metadata: Metadata = { title: "My Tasks" };
 export default function MyTasksPage() {
   return (
     <div className="space-y-6">
-      <PageHeader title="My Tasks" description="Tasks assigned to you across all projects." />
+      <PageHeader
+        eyebrow="Workspace"
+        title="My Tasks"
+        description="Tasks assigned to you across all projects."
+      />
       <EmptyState
         icon={ListChecks}
         title="A combined list is not available yet"

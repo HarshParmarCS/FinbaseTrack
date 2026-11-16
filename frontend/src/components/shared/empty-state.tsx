@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import { IconTile } from "@/components/shared/icon-tile";
 import { cn } from "@/lib/utils";
 
 type EmptyStateProps = {
@@ -11,26 +12,20 @@ type EmptyStateProps = {
   compact?: boolean;
 };
 
-export function EmptyState({
-  icon: Icon,
-  title,
-  description,
-  action,
-  compact = false,
-}: EmptyStateProps) {
+export function EmptyState({ icon, title, description, action, compact = false }: EmptyStateProps) {
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-xl border border-dashed px-6 text-center",
-        compact ? "py-8" : "bg-card py-14",
+        "flex flex-col items-center justify-center rounded-2xl px-6 text-center",
+        compact
+          ? "border border-dashed border-brand-200 bg-brand-50/40 py-8"
+          : "bg-card py-16 shadow-card",
       )}
     >
-      <div className="mb-4 flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        <Icon className="size-5" aria-hidden />
-      </div>
-      <h2 className="text-sm font-semibold">{title}</h2>
+      <IconTile icon={icon} size={compact ? "md" : "lg"} className="mb-4" />
+      <h2 className="text-base font-semibold">{title}</h2>
       <p className="mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>
-      {action ? <div className="mt-4">{action}</div> : null}
+      {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );
 }

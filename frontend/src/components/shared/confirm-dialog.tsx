@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import {
   AlertDialog,
@@ -9,6 +9,7 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -41,6 +42,9 @@ export function ConfirmDialog({
     <AlertDialog open={open} onOpenChange={(next) => !isPending && onOpenChange(next)}>
       <AlertDialogContent>
         <AlertDialogHeader>
+          <AlertDialogMedia>
+            <TriangleAlert aria-hidden />
+          </AlertDialogMedia>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div>{description}</div>

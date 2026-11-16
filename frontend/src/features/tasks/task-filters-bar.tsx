@@ -1,6 +1,7 @@
 "use client";
 
 import { Search, X } from "lucide-react";
+import { PillTab, PillTabs } from "@/components/shared/pill-tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
@@ -15,7 +16,6 @@ import {
   TASK_SORT_LABELS,
   TASK_STATUS_LABELS,
 } from "@/features/tasks/status";
-import { cn } from "@/lib/utils";
 import {
   TASK_PRIORITIES,
   TASK_SORTS,
@@ -33,38 +33,6 @@ type Props = {
   onClear: () => void;
   people: readonly UserOut[];
 };
-
-function Chip({
-  pressed,
-  onClick,
-  children,
-}: {
-  pressed: boolean;
-  onClick: () => void;
-  children: string;
-}) {
-  return (
-    <Button
-      type="button"
-      size="sm"
-      variant={pressed ? "default" : "outline"}
-      aria-pressed={pressed}
-      onClick={onClick}
-      className={cn(!pressed && "text-muted-foreground")}
-    >
-      {children}
-    </Button>
-  );
-}
-
-function Group({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div role="group" aria-label={label} className="flex flex-wrap items-center gap-1.5">
-      <span className="mr-1 text-xs font-medium text-muted-foreground">{label}</span>
-      {children}
-    </div>
-  );
-}
 
 export function TaskFiltersBar({
   state,
@@ -107,28 +75,28 @@ export function TaskFiltersBar({
       </div>
 
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-        <Group label="Status">
+        <PillTabs label="Status">
           {TASK_STATUSES.map((status) => (
-            <Chip
+            <PillTab
               key={status}
               pressed={state.status.includes(status)}
               onClick={() => onChange({ status: toggle(state.status, status) })}
             >
               {TASK_STATUS_LABELS[status]}
-            </Chip>
+            </PillTab>
           ))}
-        </Group>
-        <Group label="Priority">
+        </PillTabs>
+        <PillTabs label="Priority">
           {TASK_PRIORITIES.map((priority) => (
-            <Chip
+            <PillTab
               key={priority}
               pressed={state.priority.includes(priority)}
               onClick={() => onChange({ priority: toggle(state.priority, priority) })}
             >
               {TASK_PRIORITY_LABELS[priority]}
-            </Chip>
+            </PillTab>
           ))}
-        </Group>
+        </PillTabs>
       </div>
 
       <div className="flex flex-wrap items-end gap-x-4 gap-y-3">

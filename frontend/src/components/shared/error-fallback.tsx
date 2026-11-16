@@ -2,6 +2,7 @@
 
 import { TriangleAlert } from "lucide-react";
 import Link from "next/link";
+import { IconTile } from "@/components/shared/icon-tile";
 import { Button, buttonVariants } from "@/components/ui/button";
 
 type Props = { onRetry: () => void; fullPage?: boolean };
@@ -17,11 +18,11 @@ export function ErrorFallback({ onRetry, fullPage = false }: Props) {
       className={
         fullPage
           ? "flex min-h-svh flex-col items-center justify-center gap-3 px-6 text-center"
-          : "flex flex-col items-center justify-center gap-3 rounded-xl border bg-card px-6 py-14 text-center"
+          : "flex flex-col items-center justify-center gap-3 rounded-2xl bg-card px-6 py-16 text-center shadow-card"
       }
     >
-      <TriangleAlert className="size-6 text-destructive" aria-hidden />
-      <h1 className="text-base font-semibold">Something went wrong</h1>
+      <IconTile icon={TriangleAlert} tone="danger" size="lg" />
+      <h1 className="text-xl font-bold tracking-tight">Something went wrong</h1>
       <p className="max-w-sm text-sm text-muted-foreground">
         This page could not be displayed. Try again, or go back to the dashboard.
       </p>

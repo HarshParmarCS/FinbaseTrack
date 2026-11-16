@@ -54,9 +54,14 @@ export function StatsGrid() {
       <StatCard label="Total projects" icon={FolderKanban} value={s.total_projects} />
       <StatCard label="Active projects" icon={FolderOpen} value={s.active_projects} />
       <StatCard label="Total tasks" icon={ListChecks} value={s.total_tasks} />
-      <StatCard label="Completed" icon={CheckCircle2} value={s.completed_tasks} />
+      <StatCard label="Completed" icon={CheckCircle2} value={s.completed_tasks} tone="success" />
       <StatCard label="Pending" icon={Clock} value={s.pending_tasks} hint="To do and in progress" />
-      <StatCard label="Overdue" icon={AlertTriangle} value={s.overdue_tasks} />
+      <StatCard
+        label="Overdue"
+        icon={AlertTriangle}
+        value={s.overdue_tasks}
+        tone={s.overdue_tasks > 0 ? "danger" : "neutral"}
+      />
       <StatCard
         label="Assigned to me"
         icon={UserCheck}
@@ -66,6 +71,7 @@ export function StatsGrid() {
       <StatCard
         label="Completion"
         icon={PieChart}
+        tone="highlight"
         value={percent === null ? undefined : `${percent}%`}
         hint={percent === null ? "No tasks yet" : "Of all tasks in your projects"}
       />

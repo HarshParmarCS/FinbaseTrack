@@ -2,6 +2,7 @@
 
 import { Calendar, MoreHorizontal, Pencil, Trash2, UserRound, Users } from "lucide-react";
 import Link from "next/link";
+import { InitialsTile } from "@/components/shared/initials-tile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,13 +33,16 @@ export function ProjectCard({ project, currentUserId, onEdit, onDelete }: Projec
   const owner = project.owner.id === currentUserId ? "You" : project.owner.name;
 
   return (
-    <Card className="h-full">
+    <Card className="relative h-full pt-6 transition-all hover:-translate-y-0.5 hover:shadow-card-hover">
+      {/* thin brand accent along the top edge */}
+      <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-brand-gradient" />
       <CardContent className="flex h-full flex-col gap-4">
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 space-y-1.5">
+          <InitialsTile name={project.name} />
+          <div className="min-w-0 flex-1 space-y-1.5">
             <Link
               href={`/projects/${project.id}`}
-              className="block truncate text-base font-semibold hover:underline"
+              className="block truncate text-base font-semibold hover:text-brand-700 hover:underline"
             >
               {project.name}
             </Link>
@@ -79,7 +83,7 @@ export function ProjectCard({ project, currentUserId, onEdit, onDelete }: Projec
           {project.description ?? "No description"}
         </p>
 
-        <dl className="mt-auto grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-muted-foreground">
+        <dl className="mt-auto grid grid-cols-2 gap-x-3 gap-y-2 border-t border-border/70 pt-4 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <UserRound className="size-3.5" aria-hidden />
             <dt className="sr-only">Owner</dt>

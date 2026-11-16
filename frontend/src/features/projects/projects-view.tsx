@@ -150,6 +150,7 @@ export function ProjectsView() {
   return (
     <div className="space-y-6">
       <PageHeader
+        eyebrow="Workspace"
         title="Projects"
         description="Projects you own or belong to."
         actions={

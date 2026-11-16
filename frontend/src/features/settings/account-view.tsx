@@ -12,11 +12,13 @@ export function AccountView() {
   if (!user) return null;
   return (
     <div className="space-y-6">
-      <PageHeader title="Settings" description="Your account." />
+      <PageHeader eyebrow="Account" title="Settings" description="Your account." />
       <SectionCard title="Account">
         <div className="flex items-center gap-4">
           <Avatar size="lg">
-            <AvatarFallback>{initials(user.name)}</AvatarFallback>
+            <AvatarFallback className="bg-brand-gradient text-primary-foreground">
+              {initials(user.name)}
+            </AvatarFallback>
           </Avatar>
           <dl className="grid gap-1 text-sm">
             <div>

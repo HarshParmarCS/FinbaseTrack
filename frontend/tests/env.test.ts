@@ -4,7 +4,7 @@ import { parseServerEnv } from "@/config/server-env";
 
 describe("parsePublicEnv", () => {
   it("defaults the app name", () => {
-    expect(parsePublicEnv({}).NEXT_PUBLIC_APP_NAME).toBe("FinTasks");
+    expect(parsePublicEnv({}).NEXT_PUBLIC_APP_NAME).toBe("Finbase Workdesk");
   });
 
   it("uses the configured app name", () => {

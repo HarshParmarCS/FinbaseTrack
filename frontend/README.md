@@ -1,6 +1,6 @@
-# FinTasks frontend
+# Finbase Workdesk frontend
 
-Next.js (App Router) interface for the FinTasks API. Current state: **application shell and API
+Next.js (App Router) interface for the Finbase Workdesk API (the backend still calls itself FinTasks). Current state: **application shell and API
 integration foundation and authentication** (login, register, sign out, session state, protected
 routes, refresh handling). The data screens are not built yet. No data is mocked. The backend contract this app will follow is
 [`docs/frontend-api-contract.md`](../docs/frontend-api-contract.md).
@@ -48,7 +48,7 @@ Browser settings are in `src/config/env.ts`, the server-only one in `src/config/
 | Variable                   | Scope       | Default                 | Meaning                                                                |
 | -------------------------- | ----------- | ----------------------- | ---------------------------------------------------------------------- |
 | `BACKEND_INTERNAL_URL`     | server only | `http://localhost:8000` | Target of the `/api/*` rewrite in `next.config.ts` (no trailing slash) |
-| `NEXT_PUBLIC_APP_NAME`     | browser     | `FinTasks`              | Product name in the UI                                                 |
+| `NEXT_PUBLIC_APP_NAME`     | browser     | `Finbase Workdesk`      | Product name in the UI                                                 |
 | `NEXT_PUBLIC_API_BASE_URL` | browser     | empty (same origin)     | Base URL for API calls; see below                                      |
 
 **Same origin (default, recommended):** leave `NEXT_PUBLIC_API_BASE_URL` empty. The browser calls
@@ -185,6 +185,51 @@ exists and you can open it) and the time (`<time>` with the full date for screen
 Names come only from real responses; unknown ones read "a task", "a member" or "a project" (G15).
 The order of events written in the same transaction is not defined by the backend (G14).
 
+## Design system
+
+The look follows the Finbase reference screenshots in `reference/` (violet brand, pink accent,
+double-ring cards, pill tabs, split sign-in). Product name: **Finbase Workdesk** (set by
+`NEXT_PUBLIC_APP_NAME`; the backend and database keep their `fintasks` identifiers).
+
+**All colors live in one file: `src/app/globals.css`.**
+
+1. **Raw scales** at the top: `--brand-50` to `--brand-950` (Finbase violet is `--brand-700`),
+   `--highlight-50` to `--highlight-700` (the pink accent) and `--highlight-ring`, `--ink-*`
+   neutrals, and a few chart and state hues. Change these to re-skin the whole app.
+2. **Semantic tokens** that point at the scales: `--primary`, `--background`, `--border`,
+   `--success` / `--warning` / `--info` / `--danger` (each with `-soft`), task status
+   (`--status-todo`, `--status-in-progress`, `--status-completed`, each with `-soft` and `-solid`),
+   task priority (`--priority-low|medium|high` with `-soft`), `--chart-1` to `--chart-5`, the
+   sidebar, gradients and elevations.
+3. **Tailwind utilities** generated from them (`@theme inline`), which is all components use:
+
+| Purpose           | Utilities                                                                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Brand and accent  | `bg-brand-700`, `text-brand-700`, `bg-brand-50`, `text-highlight-600`, `ring-highlight-ring`                                                     |
+| Surfaces and text | `bg-background`, `bg-card`, `bg-input-fill`, `text-foreground`, `text-muted-foreground`, `bg-overlay`                                            |
+| States            | `text-success`, `bg-success-soft`, `text-warning`, `text-danger`, `bg-danger-soft`, `bg-info-soft`                                               |
+| Tasks             | `bg-status-completed-soft`, `text-status-in-progress`, `bg-status-todo-solid`, `bg-priority-high-soft`, `text-priority-medium`                   |
+| Charts            | `bg-chart-1` to `bg-chart-5`                                                                                                                     |
+| Gradients         | `bg-brand-gradient` (buttons, active nav), `bg-brand-band` (dashboard greeting), `bg-brand-panel` (sign-in panel), `bg-glow-line` (top bar line) |
+| Elevation         | `shadow-card`, `shadow-card-hover`, `shadow-dialog`, `shadow-glow`                                                                               |
+
+Rules, enforced by `tests/design-tokens.test.ts` (it scans every file in `src/`):
+
+- No raw Tailwind palette classes (`bg-slate-100`, `text-emerald-600`, `text-white`, ...) and no hex
+  colors in components. Add a token in `globals.css` instead.
+- No inline styles, with two exceptions: computed `width` / `height` / `transform` values (progress
+  bars, chart segments), and `src/app/global-error.tsx`, which Next.js renders without the app
+  stylesheet.
+
+Building blocks: `Button` (gradient default with a glow, violet `outline`, uppercase `cta` size),
+`Card` (double ring), dialogs (blurred backdrop, icon tile in the header), `IconTile`, `Eyebrow`,
+`PillTabs`, `StatCard`, `InputWithIcon`, `PasswordInput` (show/hide toggle), `InitialsTile`,
+`BackLink`. The font is Inter.
+
+**Sign-out** lives at the bottom of the sidebar (desktop and phone menu), with the signed-in name
+and email. There is no account popup. It calls `POST /auth/logout`; a failure is shown under the
+button and the user stays signed in.
+
 ## Experience
 
 - **Toasts** (sonner) confirm every successful change. Failures stay next to the control that caused
@@ -214,9 +259,9 @@ With the backend running, open `/diagnostics` (public, not in the sidebar). It c
 src/
   app/                  routes; (app)/ is the route group that uses the application shell
   components/
-    layout/             app shell, sidebar, mobile navigation, top bar, account menu
+    layout/             app shell, brand mark, sidebar (with the account block and sign-out), mobile navigation, top bar
     providers/          TanStack Query provider
-    shared/             page header, empty state, stat card
+    shared/             page header, empty state, stat card, icon tile, eyebrow, pill tabs, inputs with icons, password input, back link
     ui/                 shadcn/ui primitives (generated; add more with `pnpm dlx shadcn@latest add <name>`)
   config/               env.ts, server-env.ts (environment), navigation.ts (sidebar items)
   features/             health, auth, projects, tasks, dashboard, activity, diagnostics

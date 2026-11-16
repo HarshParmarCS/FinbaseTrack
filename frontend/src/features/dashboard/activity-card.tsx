@@ -71,7 +71,10 @@ export function ActivityCard({ now }: { now: Date }) {
       title="Recent activity"
       description="Latest changes in your projects"
       action={
-        <Link href="/activity" className="text-xs font-medium text-primary hover:underline">
+        <Link
+          href="/activity"
+          className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold whitespace-nowrap text-brand-700 transition-colors hover:bg-brand-100"
+        >
           View all
         </Link>
       }

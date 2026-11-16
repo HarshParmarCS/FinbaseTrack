@@ -329,3 +329,17 @@ describe("days", () => {
     ]);
   });
 });
+
+describe("timeline dot kinds", () => {
+  it("groups actions into families for the dot color", async () => {
+    const { eventKind } = await import("@/features/activity/activity-timeline");
+
+    expect(eventKind("project.created")).toBe("project");
+    expect(eventKind("project.deleted")).toBe("removal");
+    expect(eventKind("member.added")).toBe("member");
+    expect(eventKind("member.removed")).toBe("removal");
+    expect(eventKind("task.status_changed")).toBe("task");
+    expect(eventKind("task.deleted")).toBe("removal");
+    expect(eventKind("auth.login")).toBe("account");
+  });
+});

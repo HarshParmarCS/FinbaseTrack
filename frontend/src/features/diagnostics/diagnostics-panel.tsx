@@ -13,9 +13,9 @@ const STATUS_STYLE: Record<
   CheckStatus,
   { label: string; icon: typeof XCircle; className: string }
 > = {
-  pass: { label: "Pass", icon: CheckCircle2, className: "text-emerald-600" },
-  warn: { label: "Notice", icon: AlertTriangle, className: "text-amber-600" },
-  fail: { label: "Fail", icon: XCircle, className: "text-destructive" },
+  pass: { label: "Pass", icon: CheckCircle2, className: "text-success" },
+  warn: { label: "Notice", icon: AlertTriangle, className: "text-warning" },
+  fail: { label: "Fail", icon: XCircle, className: "text-danger" },
 };
 
 function CheckRow({ result }: { result: CheckResult }) {

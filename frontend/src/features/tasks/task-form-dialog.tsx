@@ -1,7 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { ListPlus, Loader2, Pencil } from "lucide-react";
+import { IconTile } from "@/components/shared/icon-tile";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { FormField, describedBy } from "@/components/shared/form-field";
@@ -126,6 +127,7 @@ export function TaskFormDialog({
     <Dialog open onOpenChange={(open) => !pending && onOpenChange(open)}>
       <DialogContent>
         <DialogHeader>
+          <IconTile icon={task ? Pencil : ListPlus} className="mb-2" />
           <DialogTitle>{task ? "Edit task" : "New task"}</DialogTitle>
           <DialogDescription>
             {task

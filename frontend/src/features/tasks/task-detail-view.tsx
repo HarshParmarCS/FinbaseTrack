@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowLeft, Compass, Pencil, ShieldAlert, Trash2 } from "lucide-react";
-import Link from "next/link";
+import { Compass, Pencil, ShieldAlert, Trash2 } from "lucide-react";
+import { BackLink } from "@/components/shared/back-link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -9,7 +9,7 @@ import { Notice } from "@/components/shared/notice";
 import { PageHeader } from "@/components/shared/page-header";
 import { InlineError } from "@/components/shared/query-states";
 import { SectionCard } from "@/components/shared/section-card";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/features/auth/auth-provider";
 import { describeDue, formatDueDate, utcToday } from "@/features/dashboard/format";
@@ -54,15 +54,7 @@ export function TaskDetailView({ projectId, taskId }: { projectId: string; taskI
   const [today] = useState(() => utcToday(new Date()));
 
   const listHref = `/projects/${projectId}/tasks`;
-  const back = (
-    <Link
-      href={listHref}
-      className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mb-2 -ml-2")}
-    >
-      <ArrowLeft aria-hidden />
-      All tasks
-    </Link>
-  );
+  const back = <BackLink href={listHref}>All tasks</BackLink>;
 
   if (deleted) return <DetailSkeleton />; // leaving the page; do not refetch a deleted task
 
@@ -121,6 +113,7 @@ export function TaskDetailView({ projectId, taskId }: { projectId: string; taskI
       <div>
         {back}
         <PageHeader
+          eyebrow="Task"
           title={data.title}
           description={project.data ? `In ${project.data.name}` : undefined}
           actions={
