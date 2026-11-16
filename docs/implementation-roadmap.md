@@ -65,7 +65,8 @@ Status legend: `[x]` done, `[ ]` not started.
 - Acceptance: the dashboard payload matches the contract.
 - Commit: `feat(dashboard): add statistics, activity timeline and audit logging`.
 
-### M8: Backend containerization and API docs [ ]
+### M8: Backend containerization and API docs [partial]
+- Status (2026-11-16): `docs/openapi.json` is exported and reconciled with `api-contract.md` (generated docs, guard tests). Not done: backend `Dockerfile`, entrypoint and the `backend` compose service.
 - Backend `Dockerfile` (multi-stage, non-root), entrypoint runs `alembic upgrade head`, compose gets the `backend` service (the `db` service already exists). Optional seed script for demo data.
 - Export `docs/openapi.json`, reconcile with `api-contract.md`.
 - Tests: full backend suite; container smoke test (`/health`, register, login).
@@ -73,26 +74,27 @@ Status legend: `[x]` done, `[ ]` not started.
 - Commit: `build(backend): add Dockerfile, compose service and OpenAPI export`.
 - **Backend complete. Frontend work starts after approval.**
 
-### M9: Frontend foundation and authentication [ ]
+### M9: Frontend foundation and authentication [x]
 - Next.js app (TypeScript strict, Tailwind, shadcn/ui, TanStack Query, RHF, Zod, ESLint, Prettier, Vitest). `/api` rewrite to the backend. `lib/api.ts` with envelope parsing, `ApiError` and 401 refresh and retry. Types from the contract. App shell, route protection, toasts.
 - Pages: Login, Register.
 - Tests: Zod schemas, API client (envelope, errors, refresh and retry once, no retry loop), login form states.
 - Acceptance: register, log in, log out against the running backend.
 - Commit: `feat(web): add app foundation and authentication pages`.
 
-### M10: Dashboard and project listing [ ]
+### M10: Dashboard and project listing [x]
 - Dashboard (stat cards, recent activity, assigned-to-me). Projects list with search, status filter, pagination, create, edit and delete dialogs. Loading, empty and error states.
 - Tests: component tests for loading, empty and error states and for the project form.
 - Acceptance: a user manages projects and sees correct statistics.
 - Commit: `feat(web): add dashboard and project management UI`.
 
-### M11: Project details, tasks and members [ ]
+### M11: Project details, tasks and members [x]
 - Project details with Tasks tab (filters, search, pagination, status dropdown), Members tab (owner management), task create and edit forms, Task Details page. Controls driven by `allowed_actions`. Server policy errors shown clearly (for example the completion rule reasons).
 - Tests: filters, task form, permission-driven controls.
 - Acceptance: the whole task workflow works in the browser.
 - Commit: `feat(web): add project details, task management and members UI`.
 
-### M12: Kanban board and activity tab (Tier 2) [ ]
+### M12: Kanban board and activity tab (Tier 2) [partial]
+- Status (2026-11-16): the activity timeline (per project and across projects) is done. Not done: the Kanban board and drag and drop; status changes use a dropdown.
 - dnd-kit board with optimistic updates and rollback, status select fallback, activity tab.
 - Tests: move handler and rollback on 403 and 422.
 - Acceptance: dragging changes status; an illegal completion rolls back with a message.

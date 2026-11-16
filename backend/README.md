@@ -1,6 +1,6 @@
 # FinTasks Backend
 
-FastAPI + SQLAlchemy 2.0 + PostgreSQL. Current state: **milestones M1 to M7** (foundation, schema, authentication, PBAC engine, projects and members, tasks, dashboard and activity). Exposed: health, `/api/v1/auth/*`, `/api/v1/projects` and `/api/v1/projects/{id}/members`. `/api/v1/projects/{id}/tasks`, `/api/v1/tasks/{id}` and `/api/v1/tasks/{id}/status`. Every service calls the PBAC engine before mutating. Also exposed: `/api/v1/dashboard/stats`, `/api/v1/dashboard/activity` and `/api/v1/projects/{id}/activity`. Not built yet: frontend.
+FastAPI + SQLAlchemy 2.0 + PostgreSQL. Current state: **milestones M1 to M7** (foundation, schema, authentication, PBAC engine, projects and members, tasks, dashboard and activity). Exposed: health, `/api/v1/auth/*`, `/api/v1/projects` and `/api/v1/projects/{id}/members`. `/api/v1/projects/{id}/tasks`, `/api/v1/tasks/{id}` and `/api/v1/tasks/{id}/status`. Every service calls the PBAC engine before mutating. Also exposed: `/api/v1/dashboard/stats`, `/api/v1/dashboard/activity` and `/api/v1/projects/{id}/activity`. The frontend is in `../frontend/`. Not built yet: a backend Dockerfile and the `backend` service in `docker-compose.yml` (milestone M8).
 
 All commands below run from the `backend/` folder.
 
