@@ -65,8 +65,8 @@ Status legend: `[x]` done, `[ ]` not started.
 - Acceptance: the dashboard payload matches the contract.
 - Commit: `feat(dashboard): add statistics, activity timeline and audit logging`.
 
-### M8: Backend containerization and API docs [partial]
-- Status (2026-11-16): `docs/openapi.json` is exported and reconciled with `api-contract.md` (generated docs, guard tests). Not done: backend `Dockerfile`, entrypoint and the `backend` compose service.
+### M8: Backend containerization and API docs [x]
+- Status (2026-11-16): `docs/openapi.json` exported and reconciled with `api-contract.md`. Backend `Dockerfile` (multi-stage, non-root), entrypoint with migrations under an advisory lock (`scripts/migrate.py`), and the `backend` compose service. Built and run with Podman.
 - Backend `Dockerfile` (multi-stage, non-root), entrypoint runs `alembic upgrade head`, compose gets the `backend` service (the `db` service already exists). Optional seed script for demo data.
 - Export `docs/openapi.json`, reconcile with `api-contract.md`.
 - Tests: full backend suite; container smoke test (`/health`, register, login).
@@ -100,13 +100,15 @@ Status legend: `[x]` done, `[ ]` not started.
 - Acceptance: dragging changes status; an illegal completion rolls back with a message.
 - Commit: `feat(web): add Kanban board and activity timeline`.
 
-### M13: Full-stack Docker Compose [ ]
+### M13: Full-stack Docker Compose [x]
+- Status (2026-11-16): `postgres`, `backend` and `frontend` services with health checks and a private network. Verified with `podman compose up --build`: all healthy, smoke test 38/38, live suite 70/70 through the proxy, browser check 24/24.
 - Frontend `Dockerfile` (Next.js standalone, non-root), compose with `db`, `backend`, `frontend`, healthchecks, ordering, env wiring.
 - Optional: Playwright smoke test (register, create project, create task, move task).
 - Acceptance: from a clean clone, `docker compose up --build` runs the whole app and the full user flow works.
 - Commit: `build: containerize frontend and finalize compose stack`.
 
-### M14: CI/CD, README and final verification [ ]
+### M14: CI/CD, README and final verification [partial]
+- Status (2026-11-16): README, `docs/ASSIGNMENT_SUBMISSION.md` and `docs/assignment-compliance-matrix.md` written; final verification done. `.github/workflows/ci.yml` added and its commands run locally; it has not run on GitHub yet.
 - GitHub Actions: backend (Ruff, mypy, pytest with Postgres service), frontend (lint, typecheck, test, build), Docker image builds.
 - README completed (all sections the assignment requires). Optional Postman collection generated from OpenAPI.
 - Final review: acceptance checklist in `requirements.md` section 7, Git history review, security checklist, requirements traceability, unfinished items list.

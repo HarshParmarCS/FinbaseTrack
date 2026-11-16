@@ -1,0 +1,15 @@
+# Keep secrets, local builds and dependencies out of the image build context.
+.env
+.env.*
+!.env.example
+node_modules/
+.next/
+out/
+coverage/
+reference/
+tests/
+*.tsbuildinfo
+npm-debug.log*
+.pnpm-debug.log*
+Dockerfile
+.dockerignore

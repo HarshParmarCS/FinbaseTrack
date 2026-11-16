@@ -16,6 +16,15 @@ TanStack Query, React Hook Form, Zod, Lucide icons, Vitest + Testing Library.
 - pnpm (`npm install -g pnpm`)
 - The backend running on `http://localhost:8000` (see `../backend/README.md`) for the `/api` proxy
 
+## Docker
+
+`frontend/Dockerfile` builds a standalone Next.js server (multi-stage, `node:24-alpine`, runs as
+`node`). The root `docker-compose.yml` builds it with `BACKEND_INTERNAL_URL=http://backend:8000`.
+That value is baked into the build, because `next.config.ts` is serialized at build time. The
+browser keeps calling `/api/v1` on the frontend origin. The image build skips Next's built-in type
+check (`SKIP_BUILD_TYPECHECK=true`) to fit small container VMs; `pnpm typecheck` remains the type
+gate.
+
 ## Setup and run
 
 ```bash
