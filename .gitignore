@@ -38,6 +38,12 @@ playwright-report/
 test-results/
 blob-report/
 
+# Documentation and infrastructure
+docs/
+infra/
+.kiro/
+req_docs/
+
 # Docker and local data
 docker-compose.override.yml
 pgdata/
