@@ -40,14 +40,14 @@ silently choosing another port.
 
 ## Scripts
 
-| Command                             | Purpose                                   |
-| ----------------------------------- | ----------------------------------------- |
-| `pnpm dev`                          | Development server on port 3000           |
-| `pnpm build` / `pnpm start`         | Production build and server               |
-| `pnpm lint`                         | ESLint                                    |
-| `pnpm typecheck`                    | `tsc --noEmit` (strict)                   |
-| `pnpm test`                         | Vitest, single run                        |
-| `pnpm format` / `pnpm format:check` | Prettier (with the Tailwind class sorter) |
+| Command                             | Purpose                                     |
+| ----------------------------------- | ------------------------------------------- |
+| `pnpm dev`                          | Development server on port 3000             |
+| `pnpm build` / `pnpm start`         | Production build and server                 |
+| `pnpm lint`                         | ESLint                                      |
+| `pnpm typecheck`                    | `next typegen` then `tsc --noEmit` (strict) |
+| `pnpm test`                         | Vitest, single run                          |
+| `pnpm format` / `pnpm format:check` | Prettier (with the Tailwind class sorter)   |
 
 ## Configuration
 
