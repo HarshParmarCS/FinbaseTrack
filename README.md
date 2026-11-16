@@ -248,9 +248,3 @@ FinbaseTrack/
 - **Session end.** An access token stays valid until it expires (up to 15 minutes) after logout.
 - **Colors.** The theme colors were estimated from screenshots of finbasetech.com
   (`frontend/reference/`). The logo mark is original artwork.
-
-## How this was made
-
-The project was built milestone by milestone with the Kiro AI coding assistant, guided by the
-steering files in `.kiro/steering/` (product rules, architecture, coding standards, workflow). The
-assignment allows AI tools (page 10). Every milestone was reviewed and checked by the tests above.
