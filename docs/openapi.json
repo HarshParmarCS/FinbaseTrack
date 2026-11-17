@@ -62,6 +62,127 @@
         "title": "ActivityOut",
         "type": "object"
       },
+      "AssignedTaskOut": {
+        "description": "A task in the caller's assigned-task list (`GET /me/tasks`), with its project.",
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "enum": [
+                "update",
+                "delete",
+                "complete"
+              ],
+              "type": "string"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "assignee": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "creator": {
+            "$ref": "#/components/schemas/UserOut"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "number"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TaskPriority"
+          },
+          "project": {
+            "$ref": "#/components/schemas/TaskProjectOut"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "title",
+          "description",
+          "status",
+          "priority",
+          "assignee",
+          "creator",
+          "due_date",
+          "position",
+          "completed_at",
+          "allowed_actions",
+          "created_at",
+          "updated_at",
+          "project"
+        ],
+        "title": "AssignedTaskOut",
+        "type": "object"
+      },
       "DashboardStats": {
         "properties": {
           "active_projects": {
@@ -425,6 +546,26 @@
           "meta"
         ],
         "title": "PagedEnvelope[ActivityOut]",
+        "type": "object"
+      },
+      "PagedEnvelope_AssignedTaskOut_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AssignedTaskOut"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/PageMeta"
+          }
+        },
+        "required": [
+          "data",
+          "meta"
+        ],
+        "title": "PagedEnvelope[AssignedTaskOut]",
         "type": "object"
       },
       "PagedEnvelope_ProjectOut_": {
@@ -943,6 +1084,30 @@
         ],
         "title": "TaskPriority",
         "type": "string"
+      },
+      "TaskProjectOut": {
+        "description": "The project a task belongs to, as shown in cross-project task lists.",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProjectStatus"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status"
+        ],
+        "title": "TaskProjectOut",
+        "type": "object"
       },
       "TaskSort": {
         "description": "The ONLY sort orders a client may request (an explicit allow-list).",
@@ -1506,8 +1671,8 @@
                   "data": [
                     {
                       "action": "task.deleted",
-                      "created_at": "2026-11-15T10:00:07Z",
-                      "id": "00000000-0000-4000-8000-000000000021",
+                      "created_at": "2026-11-15T10:00:09Z",
+                      "id": "00000000-0000-4000-8000-000000000022",
                       "metadata": {
                         "status": "todo",
                         "title": "Throwaway idea"
@@ -1523,7 +1688,7 @@
                     {
                       "action": "task.status_changed",
                       "created_at": "2026-11-15T10:00:08Z",
-                      "id": "00000000-0000-4000-8000-000000000022",
+                      "id": "00000000-0000-4000-8000-000000000023",
                       "metadata": {
                         "from": "in_progress",
                         "position": 1024.0,
@@ -1540,7 +1705,7 @@
                     {
                       "action": "task.status_changed",
                       "created_at": "2026-11-15T10:00:06Z",
-                      "id": "00000000-0000-4000-8000-000000000023",
+                      "id": "00000000-0000-4000-8000-000000000024",
                       "metadata": {
                         "from": "todo",
                         "position": 2048.0,
@@ -1618,8 +1783,8 @@
                     "recent_activity": [
                       {
                         "action": "task.deleted",
-                        "created_at": "2026-11-15T10:00:07Z",
-                        "id": "00000000-0000-4000-8000-000000000021",
+                        "created_at": "2026-11-15T10:00:09Z",
+                        "id": "00000000-0000-4000-8000-000000000022",
                         "metadata": {
                           "status": "todo",
                           "title": "Throwaway idea"
@@ -1635,7 +1800,7 @@
                       {
                         "action": "task.status_changed",
                         "created_at": "2026-11-15T10:00:08Z",
-                        "id": "00000000-0000-4000-8000-000000000022",
+                        "id": "00000000-0000-4000-8000-000000000023",
                         "metadata": {
                           "from": "in_progress",
                           "position": 1024.0,
@@ -1652,7 +1817,7 @@
                       {
                         "action": "task.status_changed",
                         "created_at": "2026-11-15T10:00:06Z",
-                        "id": "00000000-0000-4000-8000-000000000023",
+                        "id": "00000000-0000-4000-8000-000000000024",
                         "metadata": {
                           "from": "todo",
                           "position": 2048.0,
@@ -1669,7 +1834,7 @@
                       {
                         "action": "task.updated",
                         "created_at": "2026-11-15T10:00:05Z",
-                        "id": "00000000-0000-4000-8000-000000000024",
+                        "id": "00000000-0000-4000-8000-000000000025",
                         "metadata": {
                           "changes": {
                             "due_date": [
@@ -1692,8 +1857,8 @@
                       },
                       {
                         "action": "task.created",
-                        "created_at": "2026-11-15T10:00:09Z",
-                        "id": "00000000-0000-4000-8000-000000000025",
+                        "created_at": "2026-11-15T10:00:10Z",
+                        "id": "00000000-0000-4000-8000-000000000026",
                         "metadata": {
                           "assignee_id": null,
                           "priority": "medium",
@@ -1710,8 +1875,8 @@
                       },
                       {
                         "action": "task.created",
-                        "created_at": "2026-11-15T10:00:10Z",
-                        "id": "00000000-0000-4000-8000-000000000026",
+                        "created_at": "2026-11-15T10:00:11Z",
+                        "id": "00000000-0000-4000-8000-000000000027",
                         "metadata": {
                           "assignee_id": null,
                           "priority": "medium",
@@ -1728,8 +1893,8 @@
                       },
                       {
                         "action": "task.created",
-                        "created_at": "2026-11-15T10:00:11Z",
-                        "id": "00000000-0000-4000-8000-000000000027",
+                        "created_at": "2026-11-15T10:00:12Z",
+                        "id": "00000000-0000-4000-8000-000000000028",
                         "metadata": {
                           "assignee_id": "00000000-0000-4000-8000-000000000007",
                           "priority": "medium",
@@ -1737,7 +1902,7 @@
                           "title": "Fix signup bug"
                         },
                         "project_id": "00000000-0000-4000-8000-000000000005",
-                        "task_id": "00000000-0000-4000-8000-000000000028",
+                        "task_id": "00000000-0000-4000-8000-000000000029",
                         "user": {
                           "email": "ben@example.com",
                           "id": "00000000-0000-4000-8000-000000000007",
@@ -1747,7 +1912,7 @@
                       {
                         "action": "task.created",
                         "created_at": "2026-11-15T10:00:04Z",
-                        "id": "00000000-0000-4000-8000-000000000029",
+                        "id": "00000000-0000-4000-8000-000000000030",
                         "metadata": {
                           "assignee_id": "00000000-0000-4000-8000-000000000009",
                           "priority": "high",
@@ -1765,7 +1930,7 @@
                       {
                         "action": "project.updated",
                         "created_at": "2026-11-15T10:00:03Z",
-                        "id": "00000000-0000-4000-8000-000000000030",
+                        "id": "00000000-0000-4000-8000-000000000031",
                         "metadata": {
                           "changes": {
                             "description": [
@@ -1785,7 +1950,7 @@
                       {
                         "action": "member.added",
                         "created_at": "2026-11-15T10:00:02Z",
-                        "id": "00000000-0000-4000-8000-000000000031",
+                        "id": "00000000-0000-4000-8000-000000000032",
                         "metadata": {
                           "member_user_id": "00000000-0000-4000-8000-000000000009"
                         },
@@ -1866,6 +2031,299 @@
         "summary": "Liveness check",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/api/v1/me/tasks": {
+      "get": {
+        "operationId": "list_my_tasks_api_v1_me_tasks_get",
+        "parameters": [
+          {
+            "description": "Title or description contains",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Title or description contains",
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "$ref": "#/components/schemas/TaskStatus"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "priority",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "items": {
+                    "$ref": "#/components/schemas/TaskPriority"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Priority"
+            }
+          },
+          {
+            "description": "Only this project",
+            "in": "query",
+            "name": "project_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Only this project",
+              "title": "Project Id"
+            }
+          },
+          {
+            "description": "Due on or after",
+            "in": "query",
+            "name": "due_after",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Due on or after",
+              "title": "Due After"
+            }
+          },
+          {
+            "description": "Due on or before",
+            "in": "query",
+            "name": "due_before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Due on or before",
+              "title": "Due Before"
+            }
+          },
+          {
+            "in": "query",
+            "name": "overdue",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Overdue"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/TaskSort",
+              "default": "-created_at"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "maximum": 100000,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Page Size"
+            }
+          },
+          {
+            "description": "Alias of page_size",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 100,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Alias of page_size",
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "allowed_actions": [
+                        "update",
+                        "complete"
+                      ],
+                      "assignee": {
+                        "email": "cy@example.com",
+                        "id": "00000000-0000-4000-8000-000000000009",
+                        "name": "Cy Dunn"
+                      },
+                      "completed_at": "2026-11-15T10:00:07Z",
+                      "created_at": "2026-11-15T10:00:04Z",
+                      "creator": {
+                        "email": "ben@example.com",
+                        "id": "00000000-0000-4000-8000-000000000007",
+                        "name": "Ben Carter"
+                      },
+                      "description": "Wireframes and copy",
+                      "due_date": "2099-06-30",
+                      "id": "00000000-0000-4000-8000-000000000014",
+                      "position": 1024.0,
+                      "priority": "medium",
+                      "project": {
+                        "id": "00000000-0000-4000-8000-000000000005",
+                        "name": "Website redesign",
+                        "status": "active"
+                      },
+                      "project_id": "00000000-0000-4000-8000-000000000005",
+                      "status": "completed",
+                      "title": "Design login page",
+                      "updated_at": "2026-11-15T10:00:08Z"
+                    }
+                  ],
+                  "meta": {
+                    "page": 1,
+                    "page_size": 20,
+                    "total": 1,
+                    "total_pages": 1
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/PagedEnvelope_AssignedTaskOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not authenticated"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "details": [
+                      {
+                        "field": "status.0",
+                        "message": "Input should be 'todo', 'in_progress' or 'completed'",
+                        "policy_id": null
+                      }
+                    ],
+                    "message": "Request validation failed.",
+                    "request_id": "00000000-0000-4000-8000-000000000021"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Validation error or business rule violation (error envelope)"
+          }
+        },
+        "security": [
+          {
+            "accessTokenCookie": []
+          }
+        ],
+        "summary": "Tasks assigned to the caller across all of their projects",
+        "tags": [
+          "tasks"
         ]
       }
     },
@@ -2198,7 +2656,7 @@
                       }
                     ],
                     "message": "Only the project owner can delete a project.",
-                    "request_id": "00000000-0000-4000-8000-000000000034"
+                    "request_id": "00000000-0000-4000-8000-000000000035"
                   }
                 },
                 "schema": {
@@ -2604,8 +3062,8 @@
                   "data": [
                     {
                       "action": "task.deleted",
-                      "created_at": "2026-11-15T10:00:07Z",
-                      "id": "00000000-0000-4000-8000-000000000021",
+                      "created_at": "2026-11-15T10:00:09Z",
+                      "id": "00000000-0000-4000-8000-000000000022",
                       "metadata": {
                         "status": "todo",
                         "title": "Throwaway idea"
@@ -2621,7 +3079,7 @@
                     {
                       "action": "task.status_changed",
                       "created_at": "2026-11-15T10:00:08Z",
-                      "id": "00000000-0000-4000-8000-000000000022",
+                      "id": "00000000-0000-4000-8000-000000000023",
                       "metadata": {
                         "from": "in_progress",
                         "position": 1024.0,
@@ -2638,7 +3096,7 @@
                     {
                       "action": "task.status_changed",
                       "created_at": "2026-11-15T10:00:06Z",
-                      "id": "00000000-0000-4000-8000-000000000023",
+                      "id": "00000000-0000-4000-8000-000000000024",
                       "metadata": {
                         "from": "todo",
                         "position": 2048.0,
@@ -2685,7 +3143,7 @@
                     "code": "NOT_FOUND",
                     "details": [],
                     "message": "Resource not found.",
-                    "request_id": "00000000-0000-4000-8000-000000000032"
+                    "request_id": "00000000-0000-4000-8000-000000000033"
                   }
                 },
                 "schema": {
@@ -3002,7 +3460,7 @@
                     "code": "BUSINESS_RULE_VIOLATION",
                     "details": [],
                     "message": "The project owner cannot be removed from the project.",
-                    "request_id": "00000000-0000-4000-8000-000000000033"
+                    "request_id": "00000000-0000-4000-8000-000000000034"
                   }
                 },
                 "schema": {

@@ -9,16 +9,31 @@ import {
   createTask,
   deleteTask,
   getTask,
+  listMyTasks,
   listTasks,
   updateTask,
 } from "@/features/tasks/api";
 import { taskKeys } from "@/features/tasks/keys";
-import type { TaskCreate, TaskListParams, TaskStatusUpdate, TaskUpdate } from "@/types/api";
+import type {
+  MyTaskListParams,
+  TaskCreate,
+  TaskListParams,
+  TaskStatusUpdate,
+  TaskUpdate,
+} from "@/types/api";
 
 export function useTasks(projectId: string, params: TaskListParams = {}) {
   return useQuery({
     queryKey: taskKeys.list(projectId, params),
     queryFn: ({ signal }) => listTasks(projectId, params, signal),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useMyTasks(params: MyTaskListParams = {}) {
+  return useQuery({
+    queryKey: taskKeys.mine(params),
+    queryFn: ({ signal }) => listMyTasks(params, signal),
     placeholderData: keepPreviousData,
   });
 }

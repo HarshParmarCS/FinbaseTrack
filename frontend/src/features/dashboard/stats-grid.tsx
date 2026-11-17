@@ -67,6 +67,7 @@ export function StatsGrid() {
         icon={UserCheck}
         value={s.assigned_to_me}
         hint="Not completed"
+        href="/my-tasks"
       />
       <StatCard
         label="Completion"

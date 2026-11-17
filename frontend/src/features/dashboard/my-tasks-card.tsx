@@ -1,6 +1,7 @@
 "use client";
 
 import { ListChecks } from "lucide-react";
+import Link from "next/link";
 import { EmptyState } from "@/components/shared/empty-state";
 import { InlineError, ListSkeleton } from "@/components/shared/query-states";
 import { SectionCard } from "@/components/shared/section-card";
@@ -61,6 +62,14 @@ export function MyTasksCard({ today }: { today: string }) {
       title="My assigned tasks"
       description={
         assigned === undefined ? undefined : `${assigned} assigned to you and not completed`
+      }
+      action={
+        <Link
+          href="/my-tasks"
+          className="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold whitespace-nowrap text-brand-700 transition-colors hover:bg-brand-100"
+        >
+          View all
+        </Link>
       }
     >
       {body}

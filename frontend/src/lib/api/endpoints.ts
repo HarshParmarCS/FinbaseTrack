@@ -24,6 +24,9 @@ export const endpoints = {
     detail: (taskId: string) => `/tasks/${id(taskId)}`,
     status: (taskId: string) => `/tasks/${id(taskId)}/status`,
   },
+  me: {
+    tasks: "/me/tasks",
+  },
   dashboard: {
     stats: "/dashboard/stats",
     activity: "/dashboard/activity",

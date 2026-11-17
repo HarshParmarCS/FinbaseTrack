@@ -1,7 +1,9 @@
 import { api } from "@/lib/api/client";
 import { endpoints } from "@/lib/api/endpoints";
 import type {
+  AssignedTaskOut,
   Envelope,
+  MyTaskListParams,
   PagedEnvelope,
   TaskCreate,
   TaskListParams,
@@ -15,6 +17,11 @@ export function listTasks(projectId: string, params: TaskListParams, signal?: Ab
     query: params,
     signal,
   });
+}
+
+/** Tasks assigned to the current user across all of their projects. */
+export function listMyTasks(params: MyTaskListParams, signal?: AbortSignal) {
+  return api.get<PagedEnvelope<AssignedTaskOut>>(endpoints.me.tasks, { query: params, signal });
 }
 
 export async function getTask(taskId: string, signal?: AbortSignal) {

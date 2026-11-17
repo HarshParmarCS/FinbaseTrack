@@ -9,7 +9,7 @@ from typing import Any
 from sqlalchemy import ColumnElement, Select, case, func, or_, select, update
 from sqlalchemy.orm import Session, aliased
 
-from app.models import Task, TaskPriority, TaskStatus, User
+from app.models import Project, ProjectMember, Task, TaskPriority, TaskStatus, User
 
 UNASSIGNED = "unassigned"
 
@@ -48,6 +48,14 @@ class TaskRow:
     task: Task
     creator: User
     assignee: User | None
+
+
+@dataclass(frozen=True, slots=True)
+class AssignedTaskRow:
+    """A task assigned to the caller, with the project it belongs to."""
+
+    row: TaskRow
+    project: Project
 
 
 def _escape_like(text: str) -> str:
@@ -134,9 +142,52 @@ class TaskRepository:
         ).all()
         return [TaskRow(r[0], r[1], r[2]) for r in rows], int(total or 0)
 
+    def list_assigned_rows(
+        self,
+        user_id: uuid.UUID,
+        filters: TaskFilters,
+        sort: TaskSort,
+        *,
+        project_id: uuid.UUID | None,
+        offset: int,
+        limit: int,
+    ) -> tuple[list[AssignedTaskRow], int]:
+        """One page of the tasks assigned to ``user_id`` plus the total: two queries.
+
+        Data scoping: the join on ``project_members`` keeps only projects the user is a CURRENT
+        member of. ``filters`` must not carry assignee filters: the assignee is ``user_id``.
+        """
+        membership = (ProjectMember.project_id == Task.project_id) & (
+            ProjectMember.user_id == user_id
+        )
+        conditions = [Task.assignee_id == user_id, *self._filter_conditions(filters)]
+        if project_id is not None:
+            conditions.append(Task.project_id == project_id)
+        total = self.db.scalar(
+            select(func.count())
+            .select_from(Task)
+            .join(ProjectMember, membership)
+            .where(*conditions)
+        )
+        rows = self.db.execute(
+            self._rows_select()
+            .add_columns(Project)
+            .join(Project, Project.id == Task.project_id)
+            .join(ProjectMember, membership)
+            .where(*conditions)
+            .order_by(*_order_by(sort))
+            .offset(offset)
+            .limit(limit)
+        ).all()
+        return [AssignedTaskRow(TaskRow(r[0], r[1], r[2]), r[3]) for r in rows], int(total or 0)
+
+    @classmethod
+    def _conditions(cls, project_id: uuid.UUID, f: TaskFilters) -> list[ColumnElement[bool]]:
+        return [Task.project_id == project_id, *cls._filter_conditions(f)]
+
     @staticmethod
-    def _conditions(project_id: uuid.UUID, f: TaskFilters) -> list[ColumnElement[bool]]:
-        conditions: list[ColumnElement[bool]] = [Task.project_id == project_id]
+    def _filter_conditions(f: TaskFilters) -> list[ColumnElement[bool]]:
+        conditions: list[ColumnElement[bool]] = []
         if f.q:
             pattern = f"%{_escape_like(f.q)}%"
             conditions.append(

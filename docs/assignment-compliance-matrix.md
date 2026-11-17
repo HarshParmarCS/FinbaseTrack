@@ -121,7 +121,7 @@ Evidence comes from runs on 16 November 2026:
 
 | # | Requirement | Status | Evidence |
 |---|---|---|---|
-| H1 | RESTful endpoints and methods | PASS | 23 operations, `docs/api-contract.md` |
+| H1 | RESTful endpoints and methods | PASS | 24 operations, `docs/api-contract.md` |
 | H2 | Proper status codes | PASS | 200/201/204/401/403/404/409/422 asserted in tests; `test_openapi.py` |
 | H3 | Input validation | PASS | Pydantic, strict models (`extra="forbid"`), NUL rejection; `tests/audit/test_hardening.py` |
 | H4 | Consistent response structures | PASS | `{data}`, `{data, meta}`, `{error}` envelopes; `test_contract_examples_validate_against_the_response_models` |

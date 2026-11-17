@@ -15,7 +15,7 @@ from pydantic import (
     model_validator,
 )
 
-from app.models import TaskPriority, TaskStatus
+from app.models import ProjectStatus, TaskPriority, TaskStatus
 from app.schemas.auth import UserOut
 from app.schemas.common import NoNul
 
@@ -99,3 +99,17 @@ class TaskOut(BaseModel):
     allowed_actions: list[TaskAction]
     created_at: dt.datetime
     updated_at: dt.datetime
+
+
+class TaskProjectOut(BaseModel):
+    """The project a task belongs to, as shown in cross-project task lists."""
+
+    id: uuid.UUID
+    name: str
+    status: ProjectStatus
+
+
+class AssignedTaskOut(TaskOut):
+    """A task in the caller's assigned-task list (`GET /me/tasks`), with its project."""
+
+    project: TaskProjectOut

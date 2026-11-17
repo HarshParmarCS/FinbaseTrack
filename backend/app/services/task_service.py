@@ -24,7 +24,7 @@ from app.authorization.policies import Action
 from app.authorization.service import AuthorizationService
 from app.core.clock import utcnow
 from app.core.exceptions import BusinessRuleViolation, NotFoundError
-from app.models import Task, TaskStatus, User
+from app.models import Project, Task, TaskStatus, User
 from app.models.enums import ActivityAction
 from app.repositories.activity_repository import ActivityRepository
 from app.repositories.project_member_repository import ProjectMemberRepository
@@ -59,6 +59,18 @@ class TaskItem:
 @dataclass(frozen=True, slots=True)
 class TaskPage:
     items: list[TaskItem]
+    total: int
+
+
+@dataclass(frozen=True, slots=True)
+class AssignedTaskItem:
+    item: TaskItem
+    project: Project
+
+
+@dataclass(frozen=True, slots=True)
+class AssignedTaskPage:
+    items: list[AssignedTaskItem]
     total: int
 
 
@@ -166,6 +178,38 @@ class TaskService:
             filters = replace(filters, today=utcnow().date())  # "today" in UTC
         rows, total = self.tasks.list_rows(project_id, filters, sort, offset=offset, limit=limit)
         return TaskPage([self._to_item(user, ctx.project, row) for row in rows], total)
+
+    def list_assigned_tasks(
+        self,
+        user: User,
+        filters: TaskFilters,
+        sort: TaskSort,
+        *,
+        project_id: uuid.UUID | None,
+        offset: int,
+        limit: int,
+    ) -> AssignedTaskPage:
+        """The caller's assigned tasks across their projects.
+
+        Data scoping, not a policy decision (like the project list and the dashboard): the
+        repository returns only tasks in projects the caller is a current member of. The
+        ``allowed_actions`` of each task still come from the policy engine.
+        """
+        if filters.overdue is not None:
+            filters = replace(filters, today=utcnow().date())  # "today" in UTC
+        rows, total = self.tasks.list_assigned_rows(
+            user.id, filters, sort, project_id=project_id, offset=offset, limit=limit
+        )
+        items = [
+            AssignedTaskItem(
+                self._to_item(
+                    user, ProjectFacts(id=r.project.id, owner_id=r.project.owner_id), r.row
+                ),
+                r.project,
+            )
+            for r in rows
+        ]
+        return AssignedTaskPage(items, total)
 
     def get_task(self, user: User, task_id: uuid.UUID) -> TaskItem:
         # Reading a task is reading its project: the PIP finds the project from the task itself.

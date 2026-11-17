@@ -449,6 +449,43 @@ ENDPOINTS: list[dict[str, Any]] = [
         ],
         rules=["Writes a `task.deleted` entry; the history outlives the task."],
     ),
+    dict(
+        key="GET /api/v1/me/tasks",
+        group="Tasks",
+        auth=AUTH_ACCESS,
+        authz="Data scoping: tasks assigned to the caller, only in projects the caller is a "
+        "CURRENT member of. `allowed_actions` still come from the policy engine.",
+        query=[
+            ("q", "string (max 100)", "Title or description contains, case-insensitive."),
+            ("status", "`todo`|`in_progress`|`completed`", "May be repeated. Default: all."),
+            ("priority", "`low`|`medium`|`high`", "May be repeated."),
+            (
+                "project_id",
+                "uuid",
+                "Only this project. A project the caller is not in gives an empty list.",
+            ),
+            ("due_after", "date", "Due on or after (tasks without a due date are excluded)."),
+            ("due_before", "date", "Due on or before (tasks without a due date are excluded)."),
+            (
+                "overdue",
+                "boolean",
+                "`true`: due before today (UTC) and not completed. `false`: the complement.",
+            ),
+            ("sort", "enum", "Same values and default as the project task list."),
+            ("page", "int 1-100000", "Default 1."),
+            ("page_size / limit", "int 1-100", "Default 20. `limit` is an alias."),
+        ],
+        request="None.",
+        response="`PagedEnvelope<AssignedTaskOut>`: every `TaskOut` field plus "
+        "`project: {id, name, status}`.",
+        errors=[],
+        rules=[
+            "Completed tasks are included unless `status` filters them out.",
+            "A member who is removed from a project stops seeing its tasks immediately (their "
+            "assignments there are also cleared).",
+            "Projects, creators and assignees come from joins: two queries per page.",
+        ],
+    ),
     # ---- dashboard and activity ------------------------------------------------------------------
     dict(
         key="GET /api/v1/dashboard/stats",
@@ -836,6 +873,17 @@ def run_scenario() -> list[dict[str, Any]]:
         expect=403,
     )
     call(ana, f"{api}/tasks/{{task_id}}", "DELETE", f"{api}/tasks/{doomed}", expect=204)
+
+    call(cy, f"{api}/me/tasks", "GET", f"{api}/me/tasks", params={"sort": "due_date"}, expect=200)
+    call(
+        cy,
+        f"{api}/me/tasks",
+        "GET",
+        f"{api}/me/tasks",
+        kind="error",
+        params={"status": "done"},
+        expect=422,
+    )
 
     # -- dashboard and activity ---------------------------------------
     call(ana, f"{api}/dashboard/stats", "GET", f"{api}/dashboard/stats", expect=200)

@@ -79,6 +79,7 @@ DashboardStats { total_projects, active_projects, total_tasks, completed_tasks, 
                  overdue_tasks, assigned_to_me, recent_activity: ActivityOut[] (max 10) }
 PageMeta       { page, page_size, total, total_pages }
 ProjectDetailOut ProjectOut + { members: MemberOut[] }   (returned by POST, GET one and PATCH)
+AssignedTaskOut  TaskOut + { project: { id, name, status } }   (returned by GET /me/tasks)
 ProjectAction  "update" | "delete" | "manage_members" | "create_task"
 TaskAction     "update" | "delete" | "complete"
 ```
@@ -112,9 +113,10 @@ Every endpoint is documented with the same fields. Placeholders such as `<access
 | 18 | `PATCH /api/v1/tasks/{task_id}` | Access token + CSRF | Policy `task.update`: the task creator OR assignee, who must still be a project member |
 | 19 | `PATCH /api/v1/tasks/{task_id}/status` | Access token + CSRF | Policy `task.update` (creator or assignee); also `task.complete` when the new status is `completed`: an assignee who is a member, a non-blank title and description, a priority and a due date |
 | 20 | `DELETE /api/v1/tasks/{task_id}` | Access token + CSRF | Policy `task.delete`: the project owner AND the task status is `todo` |
-| 21 | `GET /api/v1/dashboard/stats` | Access token | Data scoping: only projects the caller is a CURRENT member of |
-| 22 | `GET /api/v1/dashboard/activity` | Access token | Data scoping: only projects the caller is a CURRENT member of |
-| 23 | `GET /api/v1/projects/{project_id}/activity` | Access token | Policy `project.view`: current members only |
+| 21 | `GET /api/v1/me/tasks` | Access token | Data scoping: tasks assigned to the caller, only in projects the caller is a CURRENT member of |
+| 22 | `GET /api/v1/dashboard/stats` | Access token | Data scoping: only projects the caller is a CURRENT member of |
+| 23 | `GET /api/v1/dashboard/activity` | Access token | Data scoping: only projects the caller is a CURRENT member of |
+| 24 | `GET /api/v1/projects/{project_id}/activity` | Access token | Policy `project.view`: current members only |
 
 ### 3.1 Health
 
@@ -936,7 +938,7 @@ HTTP/1.1 403 Forbidden
         "policy_id": "project-delete"
       }
     ],
-    "request_id": "00000000-0000-4000-8000-000000000034"
+    "request_id": "00000000-0000-4000-8000-000000000035"
   }
 }
 ```
@@ -1140,7 +1142,7 @@ HTTP/1.1 422 Unprocessable Content
     "code": "BUSINESS_RULE_VIOLATION",
     "message": "The project owner cannot be removed from the project.",
     "details": [],
-    "request_id": "00000000-0000-4000-8000-000000000033"
+    "request_id": "00000000-0000-4000-8000-000000000034"
   }
 }
 ```
@@ -1677,6 +1679,121 @@ HTTP/1.1 403 Forbidden
 
 - Writes a `task.deleted` entry; the history outlives the task.
 
+#### 3.5.7 GET /api/v1/me/tasks
+
+**Authentication:** Access-token cookie (`access_token`)
+
+**Authorization policy:** Data scoping: tasks assigned to the caller, only in projects the caller is a CURRENT member of. `allowed_actions` still come from the policy engine.
+
+**Query parameters**
+
+| Name | Type | Description |
+|---|---|---|
+| `q` | string (max 100) | Title or description contains, case-insensitive. |
+| `status` | `todo`|`in_progress`|`completed` | May be repeated. Default: all. |
+| `priority` | `low`|`medium`|`high` | May be repeated. |
+| `project_id` | uuid | Only this project. A project the caller is not in gives an empty list. |
+| `due_after` | date | Due on or after (tasks without a due date are excluded). |
+| `due_before` | date | Due on or before (tasks without a due date are excluded). |
+| `overdue` | boolean | `true`: due before today (UTC) and not completed. `false`: the complement. |
+| `sort` | enum | Same values and default as the project task list. |
+| `page` | int 1-100000 | Default 1. |
+| `page_size / limit` | int 1-100 | Default 20. `limit` is an alias. |
+
+**Request body:** None.
+
+**Response:** `PagedEnvelope<AssignedTaskOut>`: every `TaskOut` field plus `project: {id, name, status}`.
+
+**Error responses**
+
+| Status | Code | When |
+|---|---|---|
+| 401 | `UNAUTHENTICATED` | Missing, invalid or expired access token, or the user is inactive. |
+| 422 | `VALIDATION_ERROR` | Malformed or invalid path id, query or body; unknown body fields are rejected. |
+
+**Example request**
+
+```http
+GET /api/v1/me/tasks?sort=due_date HTTP/1.1
+Cookie: access_token=<access-token-jwt>
+```
+
+**Example response**
+
+```http
+HTTP/1.1 200 OK
+
+{
+  "data": [
+    {
+      "id": "00000000-0000-4000-8000-000000000014",
+      "project_id": "00000000-0000-4000-8000-000000000005",
+      "title": "Design login page",
+      "description": "Wireframes and copy",
+      "status": "completed",
+      "priority": "medium",
+      "assignee": {
+        "id": "00000000-0000-4000-8000-000000000009",
+        "email": "cy@example.com",
+        "name": "Cy Dunn"
+      },
+      "creator": {
+        "id": "00000000-0000-4000-8000-000000000007",
+        "email": "ben@example.com",
+        "name": "Ben Carter"
+      },
+      "due_date": "2099-06-30",
+      "position": 1024.0,
+      "completed_at": "2026-11-15T10:00:07Z",
+      "allowed_actions": [
+        "update",
+        "complete"
+      ],
+      "created_at": "2026-11-15T10:00:04Z",
+      "updated_at": "2026-11-15T10:00:08Z",
+      "project": {
+        "id": "00000000-0000-4000-8000-000000000005",
+        "name": "Website redesign",
+        "status": "active"
+      }
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "page_size": 20,
+    "total": 1,
+    "total_pages": 1
+  }
+}
+```
+
+**Example error response** (422)
+
+```http
+HTTP/1.1 422 Unprocessable Content
+
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request validation failed.",
+    "details": [
+      {
+        "field": "status.0",
+        "message": "Input should be 'todo', 'in_progress' or 'completed'",
+        "policy_id": null
+      }
+    ],
+    "request_id": "00000000-0000-4000-8000-000000000021"
+  }
+}
+```
+
+**Rules**
+
+- Completed tasks are included unless `status` filters them out.
+- A member who is removed from a project stops seeing its tasks immediately (their assignments there are also cleared).
+- Projects, creators and assignees come from joins: two queries per page.
+
 ### 3.6 Dashboard and activity
 
 #### 3.6.1 GET /api/v1/dashboard/stats
@@ -1722,7 +1839,7 @@ HTTP/1.1 200 OK
     "assigned_to_me": 0,
     "recent_activity": [
       {
-        "id": "00000000-0000-4000-8000-000000000021",
+        "id": "00000000-0000-4000-8000-000000000022",
         "user": {
           "id": "00000000-0000-4000-8000-000000000001",
           "email": "ana@example.com",
@@ -1735,10 +1852,10 @@ HTTP/1.1 200 OK
           "title": "Throwaway idea",
           "status": "todo"
         },
-        "created_at": "2026-11-15T10:00:07Z"
+        "created_at": "2026-11-15T10:00:09Z"
       },
       {
-        "id": "00000000-0000-4000-8000-000000000022",
+        "id": "00000000-0000-4000-8000-000000000023",
         "user": {
           "id": "00000000-0000-4000-8000-000000000009",
           "email": "cy@example.com",
@@ -1755,7 +1872,7 @@ HTTP/1.1 200 OK
         "created_at": "2026-11-15T10:00:08Z"
       },
       {
-        "id": "00000000-0000-4000-8000-000000000023",
+        "id": "00000000-0000-4000-8000-000000000024",
         "user": {
           "id": "00000000-0000-4000-8000-000000000007",
           "email": "ben@example.com",
@@ -1772,7 +1889,7 @@ HTTP/1.1 200 OK
         "created_at": "2026-11-15T10:00:06Z"
       },
       {
-        "id": "00000000-0000-4000-8000-000000000024",
+        "id": "00000000-0000-4000-8000-000000000025",
         "user": {
           "id": "00000000-0000-4000-8000-000000000007",
           "email": "ben@example.com",
@@ -1796,7 +1913,7 @@ HTTP/1.1 200 OK
         "created_at": "2026-11-15T10:00:05Z"
       },
       {
-        "id": "00000000-0000-4000-8000-000000000025",
+        "id": "00000000-0000-4000-8000-000000000026",
         "user": {
           "id": "00000000-0000-4000-8000-000000000007",
           "email": "ben@example.com",
@@ -1811,10 +1928,10 @@ HTTP/1.1 200 OK
           "priority": "medium",
           "assignee_id": null
         },
-        "created_at": "2026-11-15T10:00:09Z"
+        "created_at": "2026-11-15T10:00:10Z"
       },
       {
-        "id": "00000000-0000-4000-8000-000000000026",
+        "id": "00000000-0000-4000-8000-000000000027",
         "user": {
           "id": "00000000-0000-4000-8000-000000000007",
           "email": "ben@example.com",
@@ -1829,17 +1946,17 @@ HTTP/1.1 200 OK
           "priority": "medium",
           "assignee_id": null
         },
-        "created_at": "2026-11-15T10:00:10Z"
+        "created_at": "2026-11-15T10:00:11Z"
       },
       {
-        "id": "00000000-0000-4000-8000-000000000027",
+        "id": "00000000-0000-4000-8000-000000000028",
         "user": {
           "id": "00000000-0000-4000-8000-000000000007",
           "email": "ben@example.com",
           "name": "Ben Carter"
         },
         "project_id": "00000000-0000-4000-8000-000000000005",
-        "task_id": "00000000-0000-4000-8000-000000000028",
+        "task_id": "00000000-0000-4000-8000-000000000029",
         "action": "task.created",
         "metadata": {
           "title": "Fix signup bug",
@@ -1847,10 +1964,10 @@ HTTP/1.1 200 OK
           "priority": "medium",
           "assignee_id": "00000000-0000-4000-8000-000000000007"
         },
-        "created_at": "2026-11-15T10:00:11Z"
+        "created_at": "2026-11-15T10:00:12Z"
       },
       {
-        "id": "00000000-0000-4000-8000-000000000029",
+        "id": "00000000-0000-4000-8000-000000000030",
         "user": {
           "id": "00000000-0000-4000-8000-000000000007",
           "email": "ben@example.com",
@@ -1868,7 +1985,7 @@ HTTP/1.1 200 OK
         "created_at": "2026-11-15T10:00:04Z"
       },
       {
-        "id": "00000000-0000-4000-8000-000000000030",
+        "id": "00000000-0000-4000-8000-000000000031",
         "user": {
           "id": "00000000-0000-4000-8000-000000000001",
           "email": "ana@example.com",
@@ -1888,7 +2005,7 @@ HTTP/1.1 200 OK
         "created_at": "2026-11-15T10:00:03Z"
       },
       {
-        "id": "00000000-0000-4000-8000-000000000031",
+        "id": "00000000-0000-4000-8000-000000000032",
         "user": {
           "id": "00000000-0000-4000-8000-000000000001",
           "email": "ana@example.com",
@@ -1950,7 +2067,7 @@ HTTP/1.1 200 OK
 {
   "data": [
     {
-      "id": "00000000-0000-4000-8000-000000000021",
+      "id": "00000000-0000-4000-8000-000000000022",
       "user": {
         "id": "00000000-0000-4000-8000-000000000001",
         "email": "ana@example.com",
@@ -1963,10 +2080,10 @@ HTTP/1.1 200 OK
         "title": "Throwaway idea",
         "status": "todo"
       },
-      "created_at": "2026-11-15T10:00:07Z"
+      "created_at": "2026-11-15T10:00:09Z"
     },
     {
-      "id": "00000000-0000-4000-8000-000000000022",
+      "id": "00000000-0000-4000-8000-000000000023",
       "user": {
         "id": "00000000-0000-4000-8000-000000000009",
         "email": "cy@example.com",
@@ -1983,7 +2100,7 @@ HTTP/1.1 200 OK
       "created_at": "2026-11-15T10:00:08Z"
     },
     {
-      "id": "00000000-0000-4000-8000-000000000023",
+      "id": "00000000-0000-4000-8000-000000000024",
       "user": {
         "id": "00000000-0000-4000-8000-000000000007",
         "email": "ben@example.com",
@@ -2054,7 +2171,7 @@ HTTP/1.1 200 OK
 {
   "data": [
     {
-      "id": "00000000-0000-4000-8000-000000000021",
+      "id": "00000000-0000-4000-8000-000000000022",
       "user": {
         "id": "00000000-0000-4000-8000-000000000001",
         "email": "ana@example.com",
@@ -2067,10 +2184,10 @@ HTTP/1.1 200 OK
         "title": "Throwaway idea",
         "status": "todo"
       },
-      "created_at": "2026-11-15T10:00:07Z"
+      "created_at": "2026-11-15T10:00:09Z"
     },
     {
-      "id": "00000000-0000-4000-8000-000000000022",
+      "id": "00000000-0000-4000-8000-000000000023",
       "user": {
         "id": "00000000-0000-4000-8000-000000000009",
         "email": "cy@example.com",
@@ -2087,7 +2204,7 @@ HTTP/1.1 200 OK
       "created_at": "2026-11-15T10:00:08Z"
     },
     {
-      "id": "00000000-0000-4000-8000-000000000023",
+      "id": "00000000-0000-4000-8000-000000000024",
       "user": {
         "id": "00000000-0000-4000-8000-000000000007",
         "email": "ben@example.com",
@@ -2123,7 +2240,7 @@ HTTP/1.1 404 Not Found
     "code": "NOT_FOUND",
     "message": "Resource not found.",
     "details": [],
-    "request_id": "00000000-0000-4000-8000-000000000032"
+    "request_id": "00000000-0000-4000-8000-000000000033"
   }
 }
 ```

@@ -282,8 +282,7 @@ tests/                  Vitest tests (tests/api for the API layer)
 
 ## Notes for the next milestones
 
-- `/my-tasks`, `/activity`, `/settings` and `/diagnostics` are not in the original architecture route list. There is
-  no backend endpoint that lists a user's assigned tasks (contract item G2), so My Tasks cannot
-  show a list yet.
+- `/my-tasks`, `/activity`, `/settings` and `/diagnostics` are not in the original architecture route list.
+  My Tasks lists the user's assigned tasks across projects from `GET /me/tasks` (contract item G2).
 - State-changing requests must send `X-CSRF-Token` (the value of the `csrf_token` cookie). See the
   contract, section 2.

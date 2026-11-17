@@ -127,9 +127,10 @@ There are two more policies: `project-create` (any signed-in user) and `project-
 
 ## API overview
 
-There are 23 REST endpoints under `/api/v1`: `auth/*`, `projects`, `projects/{id}/members`,
-`projects/{id}/tasks`, `tasks/{id}`, `tasks/{id}/status`, `dashboard/*` and
-`projects/{id}/activity`. Responses use `{data}`, `{data, meta}` for paged lists, or `{error}`.
+There are 24 REST endpoints under `/api/v1`: `auth/*`, `projects`, `projects/{id}/members`,
+`projects/{id}/tasks`, `tasks/{id}`, `tasks/{id}/status`, `me/tasks` (my assigned tasks across
+projects), `dashboard/*` and `projects/{id}/activity`. Responses use `{data}`, `{data, meta}` for
+paged lists, or `{error}`.
 Changing requests need the `X-CSRF-Token` header that matches the `csrf_token` cookie.
 
 | Resource | Where |
@@ -193,11 +194,11 @@ Results from 16 November 2026:
 
 | Suite | Command | Result |
 |---|---|---|
-| Backend unit and API tests (real PostgreSQL) | `cd backend && pytest` | **970 passed**, 99% line coverage |
+| Backend unit and API tests (real PostgreSQL) | `cd backend && pytest` | **990 passed**, 99% line coverage |
 | Backend static checks | `ruff check . && ruff format --check . && mypy && alembic check` | clean |
-| Frontend unit and component tests | `cd frontend && pnpm test` | **367 passed** |
+| Frontend unit and component tests | `cd frontend && pnpm test` | **381 passed** |
 | Frontend static checks and build | `pnpm lint && pnpm typecheck && pnpm format:check && pnpm build` | clean |
-| Frontend end-to-end, real API through the Docker frontend proxy | `LIVE_API_URL=http://localhost:3000 LIVE_ORIGIN=http://localhost:3000 pnpm test:live` | **70 passed** |
+| Frontend end-to-end, real API through the Docker frontend proxy | `LIVE_API_URL=http://localhost:3000 LIVE_ORIGIN=http://localhost:3000 pnpm test:live` | **76 passed** |
 | Stack smoke test (3 users, all 7 policies) | `python3 scripts/smoke_test.py` | **38 of 38** |
 | Real browser (headless Chrome, 1440px and 390px) | `node scripts/browser-check.mjs` | **24 of 24** |
 
@@ -241,7 +242,6 @@ FinbaseTrack/
   Types are still checked by `pnpm typecheck` and in CI.
 - **Not built:**
   - a Kanban board with drag and drop (status changes use a dropdown);
-  - a cross-project "My Tasks" list (there is no such endpoint);
   - login rate limiting;
   - cleanup of expired refresh tokens;
   - password reset and email.

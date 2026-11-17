@@ -25,7 +25,7 @@ services:
     ports:
       # Published on the loopback interface only, for local tools (psql, the backend test suite).
       # The backend reaches the database over the internal network as postgres:5432.
-      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       # Same volume name as before the full-stack setup, so existing local data is kept.
       - fintasks_pgdata:/var/lib/postgresql/data

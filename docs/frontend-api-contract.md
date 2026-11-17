@@ -398,7 +398,7 @@ Timestamps are UTC ISO 8601 with `Z`; `due_date` is a plain `YYYY-MM-DD`; `posit
 | # | Item | Impact | Proposed action |
 |---|---|---|---|
 | G1 | **Port 3000 is occupied** by the `resume-matcher` container. The assigned origin in `ALLOWED_ORIGINS` is `http://localhost:3000`. | `pnpm dev` will fail or pick another port, which CORS would then reject. | Stop that container, or approve a backend `ALLOWED_ORIGINS` change. Not changed. |
-| G2 | No endpoint lists a user's assigned tasks across projects. The dashboard only returns the count `assigned_to_me`. | The dashboard cannot show an "assigned to me" list. | Either show the count only, or approve a contract change (for example `GET /tasks?assignee=me`). |
+| G2 | **Resolved.** `GET /me/tasks` (contract section 3.5.7) lists the caller's assigned tasks across their projects, each with `project: {id, name, status}`. It is used by the My Tasks page. | None. | Done (approved contract change). |
 | G3 | No user search or list endpoint. | Adding a member needs the exact email (`MemberCreate.email`). Assignee choices come from the project's member list. | Acceptable; matches the product scope. |
 | G4 | Board order is changed through `PATCH /tasks/{id}/status` (status is required, `position` optional). | Reordering inside one column sends the unchanged status plus a new `position`. Backend test `test_a_task_can_be_reordered_inside_its_column` covers it. | None. Not a gap. |
 | G5 | `ActivityOut.action` and `metadata` are untyped in OpenAPI. | Frontend must keep the action union by hand (section 5.3). | Optional later: make `action` an enum in the schema. |
@@ -416,7 +416,7 @@ Timestamps are UTC ISO 8601 with `Z`; `due_date` is a plain `YYYY-MM-DD`; `posit
 
 Task completion percentage is computed in the browser as `completed_tasks / total_tasks` from the statistics, rounded to a whole percent, and is shown as a dash when there are no tasks.
 
-A proposed backend addition that would remove G9 and G11 (not implemented, needs approval): `GET /tasks?assignee_id=me&status=...&due_after=...&sort=due_date` returning the same paged `TaskOut` envelope, limited to the caller's projects.
+`GET /me/tasks` now exists (G2), so the dashboard's "My assigned tasks" card could use it instead of the per-project fan-out. It has not been switched yet. "Upcoming due dates" covers tasks that are not assigned to the caller, so it still needs the fan-out, or a further endpoint.
 
 ### Activity-specific gaps (found while building the Activity module)
 | # | Missing from the backend | What the frontend does instead |
@@ -434,7 +434,7 @@ No endpoint was found broken. All 23 operations in the live OpenAPI exist, and t
 | Auth (cookie flow, CSRF, refresh, logout, `me`) | Ready. Needs the `X-CSRF-Token` rule in `lib/api.ts` |
 | Projects and members | Ready |
 | Tasks, filters, sort, pagination, status endpoint | Ready |
-| Dashboard and activity | Ready, with G2 |
+| Dashboard and activity | Ready |
 | CORS for `http://localhost:3000` | Ready for direct calls; port 3000 is currently used by another app (G1) |
 | Error format | Ready, uniform envelope |
 | Blocking items before coding | G1 only. G2 needs a decision when those screens are built |

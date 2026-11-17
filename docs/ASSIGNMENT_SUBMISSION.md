@@ -95,7 +95,7 @@ container entrypoint runs `python -m scripts.migrate`, which waits for the datab
 PostgreSQL advisory lock and runs `alembic upgrade head`. Two backend containers starting together
 therefore never run competing migrations, and nothing is ever dropped or recreated.
 
-**API design.** 23 REST operations under `/api/v1`, with plural nouns and correct verbs:
+**API design.** 24 REST operations under `/api/v1`, with plural nouns and correct verbs:
 
 | Status code | Meaning here |
 |---|---|
@@ -213,7 +213,7 @@ key, condition name and parameter. `tests/audit/test_policy_configurability.py` 
 - an invalid one prevents startup.
 
 **Data scoping.** List and aggregate endpoints (the project list, dashboard totals, the activity
-feed) filter by membership inside the query. This is documented in
+feed, the My Tasks list) filter by membership inside the query. This is documented in
 `docs/authorization-design.md` as data scoping, not as policy decisions.
 
 ## 7. Database design
@@ -405,10 +405,10 @@ keeps the volume. `docker compose down -v` deletes it, and the data with it.
 
 | Suite | What it covers | Result |
 |---|---|---|
-| Backend (`backend/tests`, pytest on real PostgreSQL, per-test rollback) | 970 tests: 237 authorization, 209 tasks, 138 audit and structure guards, 121 authentication, 112 projects and members, 67 models and constraints, 59 core (config, logging, errors, migrations), 27 dashboard | **970 passed, 99% line coverage** (also from a fresh virtual environment built from `requirements-dev.txt`) |
+| Backend (`backend/tests`, pytest on real PostgreSQL, per-test rollback) | 990 tests: 237 authorization, 226 tasks, 141 audit and structure guards, 121 authentication, 112 projects and members, 67 models and constraints, 59 core (config, logging, errors, migrations), 27 dashboard | **990 passed, 99% line coverage** (also from a fresh virtual environment built from `requirements-dev.txt`) |
 | Backend static checks | ruff lint and format, mypy, `alembic check` | clean |
-| Frontend unit and component (`frontend/tests`, Vitest + Testing Library) | API client (CSRF, refresh, errors), auth gates and forms, dashboard, projects, members, tasks, activity, design-token guard | **367 passed** |
-| Frontend end-to-end (`frontend/tests/live`) | The real pages and API client against the real API, with up to four real users: auth flows, refresh rotation and reuse, projects, members, every task rule, activity | **70 passed**, against the Docker stack through the frontend proxy |
+| Frontend unit and component (`frontend/tests`, Vitest + Testing Library) | API client (CSRF, refresh, errors), auth gates and forms, dashboard, projects, members, tasks, activity, design-token guard, My Tasks | **381 passed** |
+| Frontend end-to-end (`frontend/tests/live`) | The real pages and API client against the real API, with up to four real users: auth flows, refresh rotation and reuse, projects, members, every task rule, activity, My Tasks | **76 passed**, against the Docker stack through the frontend proxy |
 | Stack smoke test (`scripts/smoke_test.py`) | Through the frontend origin, with three users: health, cookies, CSRF and Origin rejection, all seven policies, search, filter, pagination, dashboard, logout | **38 of 38** |
 | Real browser (`scripts/browser-check.mjs`, headless Chrome) | Register through the form, every page at 1440px and 390px with no horizontal scroll on phones, the phone menu, sign-out, no browser errors | **24 of 24** |
 | Database check | Rows created through the UI's API were read directly with `psql` in the postgres container. Passwords are stored as `$argon2id$...` | as expected |
@@ -450,7 +450,6 @@ build, and the Docker image build. Its commands were run locally and pass, but t
 **Limitations.** These are real and documented in the UI or the docs:
 - **Not built:**
   - a Kanban board with drag and drop (the bonus; status changes use a dropdown);
-  - a cross-project "My Tasks" list (there is no endpoint for it);
   - login rate limiting;
   - cleanup of expired refresh tokens;
   - a request body size limit;

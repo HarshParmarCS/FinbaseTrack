@@ -101,6 +101,25 @@ describe("dashboard with data", () => {
     expect(value("Completion")).toContain("63%"); // 5 of 8
   });
 
+  it("links the assigned-to-me count and the my-tasks card to the My Tasks page", async () => {
+    serve(fetchMock, healthy());
+    await renderDashboard();
+
+    const grid = await screen.findByRole("region", { name: "Statistics" });
+    await waitFor(() =>
+      expect(within(grid).getByText("Assigned to me").closest("a")).toHaveAttribute(
+        "href",
+        "/my-tasks",
+      ),
+    );
+    expect(within(grid).getByText("Total tasks").closest("a")).toBeNull();
+    const myTasks = await card("My assigned tasks");
+    expect(within(myTasks).getByRole("link", { name: "View all" })).toHaveAttribute(
+      "href",
+      "/my-tasks",
+    );
+  });
+
   it("lists my tasks, upcoming tasks, projects, status counts and activity", async () => {
     serve(fetchMock, healthy());
     await renderDashboard();

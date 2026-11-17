@@ -152,6 +152,12 @@ export type TaskUpdate = {
 
 export type TaskStatusUpdate = { status: TaskStatus; position?: number | null };
 
+/** The project of a task in a cross-project list. */
+export type TaskProjectOut = { id: string; name: string; status: ProjectStatus };
+
+/** A task returned by `GET /me/tasks`: every `TaskOut` field plus its project. */
+export type AssignedTaskOut = TaskOut & { project: TaskProjectOut };
+
 // ---- dashboard and activity ------------------------------------------------------------------
 
 export type ActivityOut = {
@@ -195,3 +201,6 @@ export type TaskListParams = PageParams & {
   overdue?: boolean;
   sort?: TaskSort;
 };
+
+/** `GET /me/tasks`: the task list filters without the assignee, plus an optional project. */
+export type MyTaskListParams = Omit<TaskListParams, "assignee_id"> & { project_id?: string };

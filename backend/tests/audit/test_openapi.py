@@ -37,7 +37,7 @@ def test_swagger_ui_is_served(client: TestClient) -> None:
 def test_openapi_document_is_version_3(schema: dict[str, Any]) -> None:
     assert schema["openapi"].startswith("3.")
     assert schema["info"]["title"]
-    assert len(operations(schema)) == 23
+    assert len(operations(schema)) == 24
 
 
 def test_security_schemes_describe_cookie_auth_and_csrf(schema: dict[str, Any]) -> None:

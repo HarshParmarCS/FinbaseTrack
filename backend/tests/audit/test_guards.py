@@ -114,6 +114,7 @@ def test_route_inventory_matches_the_exported_openapi_paths() -> None:
 # which docs/authorization-design.md documents as data scoping, not a policy decision.
 DATA_SCOPED = {
     (ProjectService, "list_projects"),
+    (TaskService, "list_assigned_tasks"),
     (DashboardService, "dashboard"),
     (DashboardService, "user_activity"),
 }

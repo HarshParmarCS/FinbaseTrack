@@ -20,8 +20,15 @@ from app.schemas.common import (
     PageMeta,
     PaginationDep,
 )
-from app.schemas.task import TaskCreate, TaskOut, TaskStatusUpdate, TaskUpdate
-from app.services.task_service import TaskItem
+from app.schemas.task import (
+    AssignedTaskOut,
+    TaskCreate,
+    TaskOut,
+    TaskProjectOut,
+    TaskStatusUpdate,
+    TaskUpdate,
+)
+from app.services.task_service import AssignedTaskItem, TaskItem
 
 router = APIRouter(tags=["tasks"])
 
@@ -55,6 +62,14 @@ def task_out(item: TaskItem) -> TaskOut:
         allowed_actions=item.allowed_actions,
         created_at=task.created_at,
         updated_at=task.updated_at,
+    )
+
+
+def assigned_task_out(entry: AssignedTaskItem) -> AssignedTaskOut:
+    project = entry.project
+    return AssignedTaskOut(
+        **task_out(entry.item).model_dump(),
+        project=TaskProjectOut(id=project.id, name=project.name, status=project.status),
     )
 
 
@@ -130,6 +145,49 @@ def list_tasks(
     )
     return PagedEnvelope(
         data=[task_out(item) for item in page.items],
+        meta=PageMeta.of(page=pagination.page, page_size=pagination.page_size, total=page.total),
+    )
+
+
+@router.get(
+    "/me/tasks",
+    response_model=PagedEnvelope[AssignedTaskOut],
+    summary="Tasks assigned to the caller across all of their projects",
+    responses={**_AUTH, **_RULE},
+)
+def list_my_tasks(
+    user: CurrentUser,
+    service: TaskServiceDep,
+    pagination: PaginationDep,
+    q: Annotated[
+        str | None, Query(max_length=100, description="Title or description contains"), NoNul
+    ] = None,
+    status_filter: Annotated[list[TaskStatus] | None, Query(alias="status")] = None,
+    priority: Annotated[list[TaskPriority] | None, Query()] = None,
+    project_id: Annotated[uuid.UUID | None, Query(description="Only this project")] = None,
+    due_after: Annotated[dt.date | None, Query(description="Due on or after")] = None,
+    due_before: Annotated[dt.date | None, Query(description="Due on or before")] = None,
+    overdue: Annotated[bool | None, Query()] = None,
+    sort: Annotated[TaskSort, Query()] = TaskSort.CREATED_AT_DESC,
+) -> PagedEnvelope[AssignedTaskOut]:
+    filters = TaskFilters(
+        q=q.strip() if q else None,
+        statuses=tuple(status_filter or ()),
+        priorities=tuple(priority or ()),
+        due_after=due_after,
+        due_before=due_before,
+        overdue=overdue,
+    )
+    page = service.list_assigned_tasks(
+        user,
+        filters,
+        sort,
+        project_id=project_id,
+        offset=pagination.offset,
+        limit=pagination.page_size,
+    )
+    return PagedEnvelope(
+        data=[assigned_task_out(entry) for entry in page.items],
         meta=PageMeta.of(page=pagination.page, page_size=pagination.page_size, total=page.total),
     )
 
