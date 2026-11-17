@@ -1,9 +1,7 @@
 # Finbase Workdesk
 
 A project and task management platform for small teams, built for the Finbase Full Stack Engineer
-assignment (`req_docs/Full_Stack_Engineer_Assignment.pdf`). It was developed under the working
-names "FinTasks" and "TaskFlow". The backend, the database and the tokens still use `fintasks`
-internally, because renaming them would sign every user out and break existing local databases.
+assignment (`req_docs/Full_Stack_Engineer_Assignment.pdf`).
 
 - **Full technical write-up:** [`docs/ASSIGNMENT_SUBMISSION.md`](docs/ASSIGNMENT_SUBMISSION.md).
 - **Requirement-by-requirement check:** [`docs/assignment-compliance-matrix.md`](docs/assignment-compliance-matrix.md).
